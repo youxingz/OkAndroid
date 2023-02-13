@@ -5,18 +5,15 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
-import android.os.Handler;
-import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.UUID;
 
-import io.reactivex.rxjava3.annotations.NonNull;
+import io.okandroid.exception.OkBluetoothException;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.ObservableEmitter;
-import io.reactivex.rxjava3.core.ObservableOnSubscribe;
 
 public class OkBluetoothDevice {
     // Debugging
@@ -42,29 +39,23 @@ public class OkBluetoothDevice {
     }
 
     public Observable<ConnectionStatus> connect(boolean secure) {
-        return Observable.create(new ObservableOnSubscribe<ConnectionStatus>() {
-            @Override
-            public void subscribe(@NonNull ObservableEmitter<ConnectionStatus> emitter) throws Throwable {
-                connectEmitter = emitter;
-                connect(device, secure);
-                if (emitter.isDisposed()) {
-                    connectEmitter = null;
-                }
+        return Observable.create(emitter -> {
+            connectEmitter = emitter;
+            connect(device, secure);
+            if (emitter.isDisposed()) {
+                connectEmitter = null;
             }
         });
     }
 
     public Observable<OkBluetoothMessage> read() {
-        return Observable.create(new ObservableOnSubscribe<OkBluetoothMessage>() {
-            @Override
-            public void subscribe(@NonNull ObservableEmitter<OkBluetoothMessage> emitter) throws Throwable {
-                readEmitter = emitter;
-                if (mState != STATE_CONNECTED) {
-                    emitter.onComplete();
-                }
-                if (emitter.isDisposed()) {
-                    readEmitter = null;
-                }
+        return Observable.create(emitter -> {
+            readEmitter = emitter;
+            if (mState != STATE_CONNECTED) {
+                emitter.onComplete();
+            }
+            if (emitter.isDisposed()) {
+                readEmitter = null;
             }
         });
     }
@@ -73,7 +64,7 @@ public class OkBluetoothDevice {
         stop_();
     }
 
-    public void write(byte[] data) {
+    public void write(byte[] data) throws OkBluetoothException.DeviceWriteException {
         write_(data);
     }
 
@@ -120,7 +111,7 @@ public class OkBluetoothDevice {
 
     // Member fields
     private final BluetoothAdapter mAdapter;
-//    private final Handler mHandler;
+    //    private final Handler mHandler;
     private AcceptThread mSecureAcceptThread;
     private AcceptThread mInsecureAcceptThread;
     private ConnectThread mConnectThread;
@@ -145,7 +136,7 @@ public class OkBluetoothDevice {
      * session in listening (server) mode. Called by the Activity onResume()
      */
     private synchronized void start() {
-        Log.d(TAG, "start");
+//        Log.d(TAG, "start");
 
         // Cancel any thread attempting to make a connection
         if (mConnectThread != null) {
@@ -177,7 +168,7 @@ public class OkBluetoothDevice {
      * @param secure Socket Security type - Secure (true) , Insecure (false)
      */
     private synchronized void connect(BluetoothDevice device, boolean secure) {
-        Log.d(TAG, "connect to: " + device);
+//        Log.d(TAG, "connect to: " + device);
 
         // Cancel any thread attempting to make a connection
         if (mState == STATE_CONNECTING) {
@@ -210,7 +201,7 @@ public class OkBluetoothDevice {
     @SuppressLint("MissingPermission")
     private synchronized void connected(BluetoothSocket socket, BluetoothDevice
             device, final String socketType) {
-        Log.d(TAG, "connected, Socket Type:" + socketType);
+//        Log.d(TAG, "connected, Socket Type:" + socketType);
 
         // Cancel the thread that completed the connection
         if (mConnectThread != null) {
@@ -254,7 +245,7 @@ public class OkBluetoothDevice {
      * Stop all threads
      */
     private synchronized void stop_() {
-        Log.d(TAG, "stop");
+//        Log.d(TAG, "stop");
 
         if (mConnectThread != null) {
             mConnectThread.cancel();
@@ -291,7 +282,7 @@ public class OkBluetoothDevice {
      * @param out The bytes to write
      * @see ConnectedThread#write(byte[])
      */
-    private void write_(byte[] out) {
+    private void write_(byte[] out) throws OkBluetoothException.DeviceWriteException {
         // Create temporary object
         ConnectedThread r;
         // Synchronize a copy of the ConnectedThread
@@ -370,15 +361,18 @@ public class OkBluetoothDevice {
                             NAME_INSECURE, MY_UUID_INSECURE);
                 }
             } catch (IOException e) {
-                Log.e(TAG, "Socket Type: " + mSocketType + "listen() failed", e);
+//                Log.e(TAG, "Socket Type: " + mSocketType + "listen() failed", e);
+                if (connectEmitter != null && !connectEmitter.isDisposed()) {
+                    connectEmitter.onError(e);
+                }
             }
             mmServerSocket = tmp;
             mState = STATE_LISTEN;
         }
 
         public void run() {
-            Log.d(TAG, "Socket Type: " + mSocketType +
-                    "BEGIN mAcceptThread" + this);
+//            Log.d(TAG, "Socket Type: " + mSocketType +
+//                    "BEGIN mAcceptThread" + this);
             setName("OK/AcceptThread" + mSocketType);
 
             BluetoothSocket socket;
@@ -390,7 +384,10 @@ public class OkBluetoothDevice {
                     // successful connection or an exception
                     socket = mmServerSocket.accept();
                 } catch (IOException e) {
-                    Log.e(TAG, "Socket Type: " + mSocketType + "accept() failed", e);
+//                    Log.e(TAG, "Socket Type: " + mSocketType + "accept() failed", e);
+                    if (connectEmitter != null && !connectEmitter.isDisposed()) {
+                        connectEmitter.onError(e);
+                    }
                     break;
                 }
 
@@ -410,22 +407,28 @@ public class OkBluetoothDevice {
                                 try {
                                     socket.close();
                                 } catch (IOException e) {
-                                    Log.e(TAG, "Could not close unwanted socket", e);
+//                                    Log.e(TAG, "Could not close unwanted socket", e);
+                                    if (connectEmitter != null && !connectEmitter.isDisposed()) {
+                                        connectEmitter.onError(e);
+                                    }
                                 }
                                 break;
                         }
                     }
                 }
             }
-            Log.i(TAG, "END mAcceptThread, socket Type: " + mSocketType);
+//            Log.i(TAG, "END mAcceptThread, socket Type: " + mSocketType);
         }
 
         public void cancel() {
-            Log.d(TAG, "Socket Type" + mSocketType + "cancel " + this);
+//            Log.d(TAG, "Socket Type" + mSocketType + "cancel " + this);
             try {
                 mmServerSocket.close();
             } catch (IOException e) {
-                Log.e(TAG, "Socket Type" + mSocketType + "close() of server failed", e);
+//                Log.e(TAG, "Socket Type" + mSocketType + "close() of server failed", e);
+                if (connectEmitter != null && !connectEmitter.isDisposed()) {
+                    connectEmitter.onError(e);
+                }
             }
         }
     }
@@ -461,15 +464,18 @@ public class OkBluetoothDevice {
                             MY_UUID_INSECURE);
                 }
             } catch (IOException e) {
-                Log.e(TAG, "Socket Type: " + mSocketType + "create() failed", e);
+//                Log.e(TAG, "Socket Type: " + mSocketType + "create() failed", e);
+                if (connectEmitter != null && !connectEmitter.isDisposed()) {
+                    connectEmitter.onError(e);
+                }
             }
             mmSocket = tmp;
             mState = STATE_CONNECTING;
         }
 
         public void run() {
-            Log.i(TAG, "BEGIN mConnectThread SocketType:" + mSocketType);
-            setName("ConnectThread" + mSocketType);
+//            Log.i(TAG, "BEGIN mConnectThread SocketType:" + mSocketType);
+            setName("OK/ConnectThread" + mSocketType);
 
             // Always cancel discovery because it will slow down a connection
             mAdapter.cancelDiscovery();
@@ -480,13 +486,19 @@ public class OkBluetoothDevice {
                 // successful connection or an exception
                 mmSocket.connect();
             } catch (IOException e) {
-                e.printStackTrace();
+//                e.printStackTrace();
+                if (connectEmitter != null && !connectEmitter.isDisposed()) {
+                    connectEmitter.onError(e);
+                }
                 // Close the socket
                 try {
                     mmSocket.close();
                 } catch (IOException e2) {
-                    Log.e(TAG, "unable to close() " + mSocketType +
-                            " socket during connection failure", e2);
+//                    Log.e(TAG, "unable to close() " + mSocketType +
+//                            " socket during connection failure", e2);
+                    if (connectEmitter != null && !connectEmitter.isDisposed()) {
+                        connectEmitter.onError(e);
+                    }
                 }
                 connectionFailed();
                 return;
@@ -506,7 +518,10 @@ public class OkBluetoothDevice {
             try {
                 mmSocket.close();
             } catch (IOException e) {
-                Log.e(TAG, "close() of connect " + mSocketType + " socket failed", e);
+//                Log.e(TAG, "close() of connect " + mSocketType + " socket failed", e);
+                if (connectEmitter != null && !connectEmitter.isDisposed()) {
+                    connectEmitter.onError(e);
+                }
             }
         }
     }
@@ -521,7 +536,7 @@ public class OkBluetoothDevice {
         private final OutputStream mmOutStream;
 
         public ConnectedThread(BluetoothSocket socket, String socketType) {
-            Log.d(TAG, "create ConnectedThread: " + socketType);
+//            Log.d(TAG, "create ConnectedThread: " + socketType);
             mmSocket = socket;
             InputStream tmpIn = null;
             OutputStream tmpOut = null;
@@ -531,7 +546,10 @@ public class OkBluetoothDevice {
                 tmpIn = socket.getInputStream();
                 tmpOut = socket.getOutputStream();
             } catch (IOException e) {
-                Log.e(TAG, "temp sockets not created", e);
+//                Log.e(TAG, "temp sockets not created", e);
+                if (connectEmitter != null && !connectEmitter.isDisposed()) {
+                    connectEmitter.onError(e);
+                }
             }
 
             mmInStream = tmpIn;
@@ -540,7 +558,7 @@ public class OkBluetoothDevice {
         }
 
         public void run() {
-            Log.i(TAG, "BEGIN mConnectedThread");
+//            Log.i(TAG, "BEGIN mConnectedThread");
             byte[] buffer = new byte[1024];
             int bytes;
 
@@ -563,7 +581,13 @@ public class OkBluetoothDevice {
 //                    mHandler.obtainMessage(Constants.MESSAGE_READ, bytes, -1, buffer)
 //                            .sendToTarget();
                 } catch (IOException e) {
-                    Log.e(TAG, "disconnected", e);
+//                    Log.e(TAG, "disconnected", e);
+                    if (connectEmitter != null && !connectEmitter.isDisposed()) {
+                        connectEmitter.onError(e);
+                    }
+                    if (readEmitter != null && !readEmitter.isDisposed()) {
+                        readEmitter.onError(e);
+                    }
                     connectionLost();
                     break;
                 }
@@ -575,7 +599,7 @@ public class OkBluetoothDevice {
          *
          * @param buffer The bytes to write
          */
-        public void write(byte[] buffer) {
+        public void write(byte[] buffer) throws OkBluetoothException.DeviceWriteException {
             try {
                 mmOutStream.write(buffer);
 
@@ -584,7 +608,11 @@ public class OkBluetoothDevice {
 //                mHandler.obtainMessage(Constants.MESSAGE_WRITE, -1, -1, buffer)
 //                        .sendToTarget();
             } catch (IOException e) {
-                Log.e(TAG, "Exception during write", e);
+//                Log.e(TAG, "Exception during write", e);
+                if (connectEmitter != null && !connectEmitter.isDisposed()) {
+                    connectEmitter.onError(e);
+                }
+                throw new OkBluetoothException.DeviceWriteException(e.getMessage());
             }
         }
 
@@ -592,7 +620,10 @@ public class OkBluetoothDevice {
             try {
                 mmSocket.close();
             } catch (IOException e) {
-                Log.e(TAG, "close() of connect socket failed", e);
+//                Log.e(TAG, "close() of connect socket failed", e);
+                if (connectEmitter != null && !connectEmitter.isDisposed()) {
+                    connectEmitter.onError(e);
+                }
             }
         }
     }

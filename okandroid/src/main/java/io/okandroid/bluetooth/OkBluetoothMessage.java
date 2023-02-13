@@ -12,4 +12,16 @@ public class OkBluetoothMessage {
         this.data = data;
         this.timestamp = timestamp;
     }
+
+    public BluetoothDevice getDevice() {
+        return device;
+    }
+
+    public byte[] getData() {
+        return data;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
 }

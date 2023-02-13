@@ -11,4 +11,9 @@ public class OkBluetoothException {
             super(message);
         }
     }
+    public static class DeviceWriteException extends Exception {
+        public DeviceWriteException(String message) {
+            super(message);
+        }
+    }
 }

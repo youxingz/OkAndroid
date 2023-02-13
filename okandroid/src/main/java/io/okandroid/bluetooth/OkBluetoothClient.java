@@ -11,12 +11,9 @@ import android.content.IntentFilter;
 
 import java.util.Set;
 
-import io.okandroid.exception.OkBluetoothException;
 import io.okandroid.exception.OkAndroidException;
-import io.reactivex.rxjava3.annotations.NonNull;
+import io.okandroid.exception.OkBluetoothException;
 import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.core.ObservableEmitter;
-import io.reactivex.rxjava3.core.ObservableOnSubscribe;
 
 /**
  * Permissions Require:
@@ -37,6 +34,10 @@ public class OkBluetoothClient {
 
     private BroadcastReceiver broadcastReceiver; // 蓝牙设备扫描使用
 
+    public OkBluetoothClient(Activity activity) {
+        this.activity = activity;
+    }
+
     public Observable<OkBluetoothDevice> scan() throws OkAndroidException, OkBluetoothException.BluetoothNotEnableException {
         return scan(false);
     }
@@ -55,54 +56,51 @@ public class OkBluetoothClient {
                 throw new OkBluetoothException.BluetoothNotEnableException("Bluetooth not enabled");
             }
         }
-        return Observable.create(new ObservableOnSubscribe<OkBluetoothDevice>() {
-            @Override
-            public void subscribe(@NonNull ObservableEmitter<OkBluetoothDevice> emitter) throws Throwable {
-                if (emitter.isDisposed()) return;
-                broadcastReceiver = new BroadcastReceiver() {
-                    public void onReceive(Context context, Intent intent) {
-                        String action = intent.getAction();
-                        switch (action) {
-                            case BluetoothAdapter.ACTION_DISCOVERY_STARTED:
-                                // start scan.
-                                break;
-                            case BluetoothAdapter.ACTION_DISCOVERY_FINISHED: {
-                                // end scan.
-                                if (broadcastReceiver != null) {
-                                    activity.unregisterReceiver(broadcastReceiver);
-                                    broadcastReceiver = null;
-                                }
-                                if (!emitter.isDisposed()) return;
-                                emitter.onComplete();
-                                break;
+        return Observable.create(emitter -> {
+            if (emitter.isDisposed()) return;
+            broadcastReceiver = new BroadcastReceiver() {
+                public void onReceive(Context context, Intent intent) {
+                    String action = intent.getAction();
+                    switch (action) {
+                        case BluetoothAdapter.ACTION_DISCOVERY_STARTED:
+                            // start scan.
+                            break;
+                        case BluetoothAdapter.ACTION_DISCOVERY_FINISHED: {
+                            // end scan.
+                            if (broadcastReceiver != null) {
+                                activity.unregisterReceiver(broadcastReceiver);
+                                broadcastReceiver = null;
                             }
-                            case BluetoothDevice.ACTION_FOUND: {
-                                // Discovery has found a device. Get the BluetoothDevice
-                                // object and its info from the Intent.
-                                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                                if (device == null) break;
-                                // String deviceName = device.getName();
-                                // String deviceHardwareAddress = device.getAddress(); // MAC address
-                                if (emitter.isDisposed()) return;
-                                emitter.onNext(new OkBluetoothDevice(device, OkBluetoothDevice.Type.NewFoundDevice));
-                            }
+                            if (!emitter.isDisposed()) return;
+                            emitter.onComplete();
+                            break;
+                        }
+                        case BluetoothDevice.ACTION_FOUND: {
+                            // Discovery has found a device. Get the BluetoothDevice
+                            // object and its info from the Intent.
+                            BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                            if (device == null) break;
+                            // String deviceName = device.getName();
+                            // String deviceHardwareAddress = device.getAddress(); // MAC address
+                            if (emitter.isDisposed()) return;
+                            emitter.onNext(new OkBluetoothDevice(device, OkBluetoothDevice.Type.NewFoundDevice));
                         }
                     }
-                };
-                // register receiver
-                IntentFilter filter = new IntentFilter();
-                filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);    // 开始扫描
-                filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);   // 扫描结束
-                filter.addAction(BluetoothDevice.ACTION_FOUND);                 // 扫描中，返回结果
-                filter.addAction(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED);    // 扫描模式改变
-                activity.registerReceiver(broadcastReceiver, filter);
-                adapter.startDiscovery();
-                // bonded devices
-                Set<BluetoothDevice> list = adapter.getBondedDevices();
-                for (BluetoothDevice device : list) {
-                    if (emitter.isDisposed()) return;
-                    emitter.onNext(new OkBluetoothDevice(device, OkBluetoothDevice.Type.BondedDevice));
                 }
+            };
+            // register receiver
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);    // 开始扫描
+            filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);   // 扫描结束
+            filter.addAction(BluetoothDevice.ACTION_FOUND);                 // 扫描中，返回结果
+            filter.addAction(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED);    // 扫描模式改变
+            activity.registerReceiver(broadcastReceiver, filter);
+            adapter.startDiscovery();
+            // bonded devices
+            Set<BluetoothDevice> list = adapter.getBondedDevices();
+            for (BluetoothDevice device : list) {
+                if (emitter.isDisposed()) return;
+                emitter.onNext(new OkBluetoothDevice(device, OkBluetoothDevice.Type.BondedDevice));
             }
         });
     }
