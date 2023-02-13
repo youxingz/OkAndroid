@@ -16,7 +16,7 @@ import io.okandroid.exception.OkBluetoothException;
 import io.reactivex.rxjava3.core.Observable;
 
 /**
- * Permissions Require:
+ * Permissions Required:
  * <manifest ... >
  * <uses-permission android:name="android.permission.BLUETOOTH" />
  * <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
