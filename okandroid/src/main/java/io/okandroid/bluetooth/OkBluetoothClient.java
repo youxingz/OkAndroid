@@ -10,6 +10,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import io.okandroid.exception.OkAndroidException;
 import io.okandroid.exception.OkBluetoothException;
@@ -58,6 +60,19 @@ public class OkBluetoothClient {
         }
         return Observable.create(emitter -> {
             if (emitter.isDisposed()) return;
+            // if 5sec stub, emitter.onComplete!
+            final long[] lastFoundDeviceAt = {System.currentTimeMillis()};
+            new Timer().schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    if (System.currentTimeMillis() > lastFoundDeviceAt[0] + 5000) {
+                        if (!emitter.isDisposed()) {
+                            emitter.onComplete();
+                        }
+                        this.cancel();
+                    }
+                }
+            }, 1000, 1000);
             broadcastReceiver = new BroadcastReceiver() {
                 public void onReceive(Context context, Intent intent) {
                     String action = intent.getAction();
@@ -76,6 +91,7 @@ public class OkBluetoothClient {
                             break;
                         }
                         case BluetoothDevice.ACTION_FOUND: {
+                            lastFoundDeviceAt[0] = System.currentTimeMillis();
                             // Discovery has found a device. Get the BluetoothDevice
                             // object and its info from the Intent.
                             BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);

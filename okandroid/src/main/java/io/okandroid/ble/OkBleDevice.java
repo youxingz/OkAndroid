@@ -49,8 +49,8 @@ public class OkBleDevice {
         connected,
         disconnected,
         disconnecting,
-        connecting_lost,
-        fail,
+//        connecting_lost,
+//        fail,
     }
 
     public OkBleDevice(Context context) {

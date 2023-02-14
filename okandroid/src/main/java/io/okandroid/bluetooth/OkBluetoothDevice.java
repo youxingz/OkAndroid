@@ -22,15 +22,27 @@ public class OkBluetoothDevice {
     private static final String NAME_SECURE = "OkBluetoothDeviceSecure";
     private static final String NAME_INSECURE = "OkBluetoothDeviceInsecure";
     // Unique UUID for this application
-    private static final UUID MY_UUID_SECURE =
-            UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a66");
-    private static final UUID MY_UUID_INSECURE =
-            UUID.fromString("8ce255c0-200a-11e0-ac64-0800200c9a66");
+//    private static final UUID MY_UUID_SECURE = UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a66");
+//    private static final UUID MY_UUID_INSECURE = UUID.fromString("8ce255c0-200a-11e0-ac64-0800200c9a66");
     private ObservableEmitter<ConnectionStatus> connectEmitter;
     private ObservableEmitter<OkBluetoothMessage> readEmitter;
+    private UUID uuid;
     // fields
     private BluetoothDevice device;
     private Type type;
+
+    public enum Type {
+        BondedDevice,
+        NewFoundDevice,
+    }
+
+    public enum ConnectionStatus {
+        connecting,
+        connected,
+        disconnect,
+        connecting_lost,
+        fail,
+    }
 
     protected OkBluetoothDevice(BluetoothDevice device, Type type) {
         this.device = device;
@@ -38,10 +50,10 @@ public class OkBluetoothDevice {
         this.mAdapter = BluetoothAdapter.getDefaultAdapter();
     }
 
-    public Observable<ConnectionStatus> connect(boolean secure) {
+    public Observable<ConnectionStatus> connect(boolean secure, UUID uuid) {
         return Observable.create(emitter -> {
             connectEmitter = emitter;
-            connect(device, secure);
+            connect(device, secure, uuid);
             if (emitter.isDisposed()) {
                 connectEmitter = null;
             }
@@ -76,19 +88,6 @@ public class OkBluetoothDevice {
 
     public Type getType() {
         return type;
-    }
-
-    public enum Type {
-        BondedDevice,
-        NewFoundDevice,
-    }
-
-    public enum ConnectionStatus {
-        connecting,
-        connected,
-        disconnect,
-        connecting_lost,
-        fail,
     }
 
     //////// connect ////////
@@ -167,9 +166,9 @@ public class OkBluetoothDevice {
      * @param device The BluetoothDevice to connect
      * @param secure Socket Security type - Secure (true) , Insecure (false)
      */
-    private synchronized void connect(BluetoothDevice device, boolean secure) {
+    private synchronized void connect(BluetoothDevice device, boolean secure, UUID uuid) {
 //        Log.d(TAG, "connect to: " + device);
-
+        this.uuid = uuid;
         // Cancel any thread attempting to make a connection
         if (mState == STATE_CONNECTING) {
             if (mConnectThread != null) {
@@ -185,7 +184,7 @@ public class OkBluetoothDevice {
         }
 
         // Start the thread to connect with the given device
-        mConnectThread = new ConnectThread(device, secure);
+        mConnectThread = new ConnectThread(device, secure, uuid);
         mConnectThread.start();
         if (connectEmitter != null && !connectEmitter.isDisposed()) {
             connectEmitter.onNext(ConnectionStatus.connecting);
@@ -354,11 +353,11 @@ public class OkBluetoothDevice {
             // Create a new listening server socket
             try {
                 if (secure) {
-                    tmp = mAdapter.listenUsingRfcommWithServiceRecord(NAME_SECURE,
-                            MY_UUID_SECURE);
+//                    tmp = mAdapter.listenUsingRfcommWithServiceRecord(NAME_SECURE, MY_UUID_SECURE);
+                    tmp = mAdapter.listenUsingRfcommWithServiceRecord(NAME_SECURE, uuid);
                 } else {
-                    tmp = mAdapter.listenUsingInsecureRfcommWithServiceRecord(
-                            NAME_INSECURE, MY_UUID_INSECURE);
+//                    tmp = mAdapter.listenUsingInsecureRfcommWithServiceRecord(NAME_INSECURE, MY_UUID_INSECURE);
+                    tmp = mAdapter.listenUsingInsecureRfcommWithServiceRecord(NAME_INSECURE, uuid);
                 }
             } catch (IOException e) {
 //                Log.e(TAG, "Socket Type: " + mSocketType + "listen() failed", e);
@@ -445,7 +444,7 @@ public class OkBluetoothDevice {
         private final BluetoothDevice mmDevice;
         private String mSocketType;
 
-        public ConnectThread(BluetoothDevice device, boolean secure) {
+        public ConnectThread(BluetoothDevice device, boolean secure, UUID uuid) {
             mmDevice = device;
             BluetoothSocket tmp = null;
             mSocketType = secure ? "Secure" : "Insecure";
@@ -456,12 +455,13 @@ public class OkBluetoothDevice {
                 if (secure) {
 //                    tmp = device.createRfcommSocketToServiceRecord(
 //                            MY_UUID_SECURE);
-                    // TODO! uuid? 需要与板子同步设置该 uuid，通信用
-                    tmp = device.createRfcommSocketToServiceRecord(
-                            device.getUuids()[0].getUuid());
+//                    tmp = device.createRfcommSocketToServiceRecord(
+//                            device.getUuids()[0].getUuid());
+                    tmp = device.createRfcommSocketToServiceRecord(uuid);
                 } else {
-                    tmp = device.createInsecureRfcommSocketToServiceRecord(
-                            MY_UUID_INSECURE);
+//                    tmp = device.createInsecureRfcommSocketToServiceRecord(
+//                            MY_UUID_INSECURE);
+                    tmp = device.createInsecureRfcommSocketToServiceRecord(uuid);
                 }
             } catch (IOException e) {
 //                Log.e(TAG, "Socket Type: " + mSocketType + "create() failed", e);
