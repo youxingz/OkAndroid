@@ -34,6 +34,7 @@ public class OkBluetoothDevice {
     public enum Type {
         BondedDevice,
         NewFoundDevice,
+        Unknown,
     }
 
     public enum ConnectionStatus {
@@ -48,6 +49,10 @@ public class OkBluetoothDevice {
         this.device = device;
         this.type = type;
         this.mAdapter = BluetoothAdapter.getDefaultAdapter();
+    }
+
+    public OkBluetoothDevice(BluetoothDevice device) {
+        this(device, Type.Unknown);
     }
 
     public Observable<ConnectionStatus> connect(boolean secure, UUID uuid) {

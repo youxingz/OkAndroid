@@ -39,6 +39,7 @@ public class OkBleDevice {
 
     //    private ConnectionStatus connectionStatus;
     private BluetoothGattCallback gattCallback;
+    private BluetoothDevice device;
 
     private ObservableEmitter<ConnectionStatus> connectionEmitter;
     private ObservableEmitter<OkBluetoothMessage> readCharacteristicEmitter;
@@ -53,8 +54,9 @@ public class OkBleDevice {
 //        fail,
     }
 
-    public OkBleDevice(Context context) {
+    public OkBleDevice(Context context, BluetoothDevice device) {
         this.context = context;
+        this.device = device;
     }
 
     private boolean initialize(@NonNull ObservableEmitter<ConnectionStatus> emitter) {
@@ -171,18 +173,14 @@ public class OkBleDevice {
         return true;
     }
 
-
-    Observable<ConnectionStatus> connect(BluetoothDevice device, boolean autoConnect) {
-        return connect(device.getAddress(), autoConnect);
-    }
-
     @SuppressLint("MissingPermission")
-    Observable<ConnectionStatus> connect(String address, boolean autoConnect) {
+    Observable<ConnectionStatus> connect(boolean autoConnect) {
         return Observable.create(new ObservableOnSubscribe<ConnectionStatus>() {
             @Override
             public void subscribe(@NonNull ObservableEmitter<ConnectionStatus> emitter) throws Throwable {
                 connectionEmitter = emitter;
                 initialize(emitter);
+                String address = device.getAddress();
                 if (mBluetoothAdapter == null || address == null) {
 //                    Log.w(TAG, "BluetoothAdapter not initialized or unspecified address.");
 //                    return false;
