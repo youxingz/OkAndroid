@@ -92,9 +92,15 @@ public class OkBleDevice {
             @Override
             public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
                 super.onConnectionStateChange(gatt, status, newState);
+                // gatt.getServices().get(0).getUuid();
+                if (gatt.getServices() != null)
+                    for (BluetoothGattService service : gatt.getServices()) {
+                        UUID uuid = service.getUuid();
+                        System.out.println(uuid);
+                    }
                 if (status != BluetoothGatt.GATT_SUCCESS) return;
                 if (connectionEmitter != null && !connectionEmitter.isDisposed()) {
-                    switch (status) {
+                    switch (newState) {
                         case BluetoothProfile.STATE_CONNECTED:
                             connectionEmitter.onNext(ConnectionStatus.connected);
                             break;
