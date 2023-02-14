@@ -50,8 +50,8 @@ public class OkBleDevice {
         connected,
         disconnected,
         disconnecting,
-//        connecting_lost,
-//        fail,
+        //        connecting_lost,
+        //        fail,
     }
 
     public OkBleDevice(Context context, BluetoothDevice device) {
@@ -65,7 +65,7 @@ public class OkBleDevice {
         if (mBluetoothManager == null) {
             mBluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
             if (mBluetoothManager == null) {
-//                Log.e(TAG, "Unable to initialize BluetoothManager.");
+                //                Log.e(TAG, "Unable to initialize BluetoothManager.");
                 emitter.onError(new OkBluetoothException("Unable to initialize BluetoothManager."));
                 return false;
             }
@@ -73,7 +73,7 @@ public class OkBleDevice {
 
         mBluetoothAdapter = mBluetoothManager.getAdapter();
         if (mBluetoothAdapter == null) {
-//            Log.e(TAG, "Unable to obtain a BluetoothAdapter.");
+            //            Log.e(TAG, "Unable to obtain a BluetoothAdapter.");
             emitter.onError(new OkBluetoothException("Unable to obtain a BluetoothAdapter."));
             return false;
         }
@@ -174,7 +174,7 @@ public class OkBleDevice {
     }
 
     @SuppressLint("MissingPermission")
-    Observable<ConnectionStatus> connect(boolean autoConnect) {
+    public Observable<ConnectionStatus> connect(boolean autoConnect) {
         return Observable.create(new ObservableOnSubscribe<ConnectionStatus>() {
             @Override
             public void subscribe(@NonNull ObservableEmitter<ConnectionStatus> emitter) throws Throwable {
@@ -182,24 +182,24 @@ public class OkBleDevice {
                 initialize(emitter);
                 String address = device.getAddress();
                 if (mBluetoothAdapter == null || address == null) {
-//                    Log.w(TAG, "BluetoothAdapter not initialized or unspecified address.");
-//                    return false;
+                    //                    Log.w(TAG, "BluetoothAdapter not initialized or unspecified address.");
+                    //                    return false;
                     emitter.onError(new OkBluetoothException("BluetoothAdapter not initialized or unspecified address."));
                 }
 
                 // Previously connected device.  Try to reconnect.
                 if (mBluetoothGatt != null) {
-//                    Log.d(TAG, "Trying to use an existing mBluetoothGatt for connection.");
+                    //                    Log.d(TAG, "Trying to use an existing mBluetoothGatt for connection.");
                     if (mBluetoothGatt.connect()) {
-//                        connectionStatus = ConnectionStatus.connecting;
+                        //                        connectionStatus = ConnectionStatus.connecting;
                         emitter.onNext(ConnectionStatus.connecting);
-//                        return true;
+                        //                        return true;
                     }
                 }
 
                 final BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
                 if (device == null) {
-//                    Log.w(TAG, "Device not found.  Unable to connect.");
+                    //                    Log.w(TAG, "Device not found.  Unable to connect.");
                     emitter.onError(new OkBluetoothException.DeviceNotFoundException("Device not found. Unable to connect."));
                     return;
                 }
@@ -208,8 +208,8 @@ public class OkBleDevice {
                     return;
                 }
                 mBluetoothGatt = device.connectGatt(context, autoConnect, gattCallback);
-//                Log.d(TAG, "Trying to create a new connection.");
-//                connectionStatus = ConnectionStatus.connecting;
+                //                Log.d(TAG, "Trying to create a new connection.");
+                //                connectionStatus = ConnectionStatus.connecting;
                 emitter.onNext(ConnectionStatus.connecting);
             }
         });
@@ -218,7 +218,7 @@ public class OkBleDevice {
     @SuppressLint("MissingPermission")
     public void disconnect() {
         if (mBluetoothAdapter == null || mBluetoothGatt == null) {
-//            Log.w(TAG, "BluetoothAdapter not initialized");
+            //            Log.w(TAG, "BluetoothAdapter not initialized");
             return;
         }
         if (connectionEmitter != null && !connectionEmitter.isDisposed()) {
@@ -249,7 +249,7 @@ public class OkBleDevice {
     @SuppressLint("MissingPermission")
     public @NonNull Flowable<Integer> writeMtu(int mtu) {
         return Single.create((SingleOnSubscribe<Integer>) emitter -> {
-//            setMtu(mtu);
+            //            setMtu(mtu);
             if (mBluetoothGatt == null) {
                 emitter.onError(new OkBluetoothException("Can not write MTU. BluetoothGatt is null"));
                 return;
