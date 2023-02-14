@@ -21,6 +21,7 @@ public class OkBluetoothClient {
     private final BluetoothAdapter mAdapter;
     private BluetoothSocket socket;
     private volatile boolean connectionIsWorking = false;
+    private OutputStream out;
     // fields
     private BluetoothDevice device;
     private Type type;
@@ -59,14 +60,13 @@ public class OkBluetoothClient {
                 } else {
                     connectSocket = device.createInsecureRfcommSocketToServiceRecord(uuid);
                 }
-                if (!emitter.isDisposed())
-                    emitter.onNext(ConnectionStatus.connecting);
+                if (!emitter.isDisposed()) emitter.onNext(ConnectionStatus.connecting);
                 mAdapter.cancelDiscovery();
                 connectSocket.connect(); // block until connected.
                 socket = connectSocket;
+                out = socket.getOutputStream(); // input stream 不需要初始化，谁读谁创建
                 connectionIsWorking = true;
-                if (!emitter.isDisposed())
-                    emitter.onNext(ConnectionStatus.connected);
+                if (!emitter.isDisposed()) emitter.onNext(ConnectionStatus.connected);
                 while (connectionIsWorking) {
                     Thread.sleep(1000);
                 }
@@ -82,8 +82,7 @@ public class OkBluetoothClient {
                     }
                 } catch (IOException e2) {
                     // e2.printStackTrace();
-                    if (!emitter.isDisposed())
-                        emitter.onError(e2);
+                    if (!emitter.isDisposed()) emitter.onError(e2);
                 }
                 if (!emitter.isDisposed()) {
                     emitter.onNext(ConnectionStatus.fail);
@@ -99,7 +98,8 @@ public class OkBluetoothClient {
                 emitter.onError(new OkBluetoothException("Please connect to this device first."));
                 return;
             }
-            if (!socket.isConnected()) {
+            // if (!socket.isConnected()) {
+            if (!connectionIsWorking || !socket.isConnected()) {
                 emitter.onError(new OkBluetoothException("Connection lost! Please connect to this device first."));
                 return;
             }
@@ -126,10 +126,17 @@ public class OkBluetoothClient {
     public void disconnect() {
         connectionIsWorking = false;
         try {
-            if (socket == null) return;
-            if (!socket.isConnected()) return;
-            socket.close();
-            socket = null;
+            // output
+            if (out != null) {
+                out.close();
+                out = null;
+            }
+            // socket
+            if (socket != null) {
+                if (!socket.isConnected()) return;
+                socket.close();
+                socket = null;
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -141,11 +148,12 @@ public class OkBluetoothClient {
                 emitter.onError(new OkBluetoothException("Please connect to this device first."));
                 return;
             }
-            if (!socket.isConnected()) {
+            // if (!socket.isConnected()) {
+            if (!connectionIsWorking) {
                 emitter.onError(new OkBluetoothException("Connection lost! Please connect to this device first."));
                 return;
             }
-            try (OutputStream out = socket.getOutputStream()) {
+            try {
                 out.write(data);
                 emitter.onSuccess(data);
             } catch (IOException e) {
