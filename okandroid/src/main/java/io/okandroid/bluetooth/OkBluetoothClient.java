@@ -1,123 +1,166 @@
 package io.okandroid.bluetooth;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
+import android.bluetooth.BluetoothSocket;
 
-import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.UUID;
 
-import io.okandroid.exception.OkAndroidException;
 import io.okandroid.exception.OkBluetoothException;
 import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Single;
 
-/**
- * Permissions Required:
- * <manifest ... >
- * <uses-permission android:name="android.permission.BLUETOOTH" />
- * <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
- * <p>
- * <!-- If your app targets Android 9 or lower, you can declare
- * ACCESS_COARSE_LOCATION instead. -->
- * <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
- * ...
- * </manifest>
- */
 public class OkBluetoothClient {
-    private final static String TAG = "OK/BluetoothClient";
-    private Activity activity;
-    public static int REQUEST_ENABLE_BT = 1;
+    // Debugging
+    private static final String TAG = "OK/OkBluetoothClient";
+    // bluetooth:
+    private final BluetoothAdapter mAdapter;
+    private BluetoothSocket socket;
+    private volatile boolean connectionIsWorking = false;
+    // fields
+    private BluetoothDevice device;
+    private Type type;
 
-    private BroadcastReceiver broadcastReceiver; // 蓝牙设备扫描使用
-
-    public OkBluetoothClient(Activity activity) {
-        this.activity = activity;
+    public enum Type {
+        BondedDevice, NewFoundDevice, Unknown,
     }
 
-    public Observable<OkBluetoothDevice> scan() throws OkAndroidException, OkBluetoothException.BluetoothNotEnableException {
-        return scan(false);
+    public enum ConnectionStatus {
+        connecting, connected, disconnect, fail,
+    }
+
+    protected OkBluetoothClient(BluetoothDevice targetDevice, Type type) {
+        this.device = targetDevice;
+        this.type = type;
+        this.mAdapter = BluetoothAdapter.getDefaultAdapter();
     }
 
     @SuppressLint("MissingPermission")
-    public Observable<OkBluetoothDevice> scan(boolean gotoSettingIfNotTurnOn) throws OkAndroidException, OkBluetoothException.BluetoothNotEnableException {
-        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
-        if (adapter == null) {
-            throw new OkAndroidException("Device does not support bluetooth");
-        }
-        if (!adapter.isEnabled()) {
-            if (gotoSettingIfNotTurnOn) {
-                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                activity.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-            } else {
-                throw new OkBluetoothException.BluetoothNotEnableException("Bluetooth not enabled");
-            }
-        }
+    public OkBluetoothClient(BluetoothDevice targetDevice) {
+        this(targetDevice, (targetDevice.getBondState() == BluetoothDevice.BOND_BONDED) ? Type.BondedDevice : Type.Unknown);
+    }
+
+    /**
+     * @param uuid   similarly: PORT with IP
+     * @param secure
+     * @return
+     */
+    @SuppressLint("MissingPermission")
+    public Observable<ConnectionStatus> connect(UUID uuid, boolean secure) {
         return Observable.create(emitter -> {
-            if (emitter.isDisposed()) return;
-            // if 5sec stub, emitter.onComplete!
-            final long[] lastFoundDeviceAt = {System.currentTimeMillis()};
-            new Timer().schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    if (System.currentTimeMillis() > lastFoundDeviceAt[0] + 5000) {
-                        if (!emitter.isDisposed()) {
-                            emitter.onComplete();
-                        }
-                        this.cancel();
-                    }
+            BluetoothSocket connectSocket = null;
+            try {
+                if (secure) {
+                    connectSocket = device.createRfcommSocketToServiceRecord(uuid);
+                } else {
+                    connectSocket = device.createInsecureRfcommSocketToServiceRecord(uuid);
                 }
-            }, 1000, 1000);
-            broadcastReceiver = new BroadcastReceiver() {
-                public void onReceive(Context context, Intent intent) {
-                    String action = intent.getAction();
-                    switch (action) {
-                        case BluetoothAdapter.ACTION_DISCOVERY_STARTED:
-                            // start scan.
-                            break;
-                        case BluetoothAdapter.ACTION_DISCOVERY_FINISHED: {
-                            // end scan.
-                            if (broadcastReceiver != null) {
-                                activity.unregisterReceiver(broadcastReceiver);
-                                broadcastReceiver = null;
-                            }
-                            if (!emitter.isDisposed()) return;
-                            emitter.onComplete();
-                            break;
-                        }
-                        case BluetoothDevice.ACTION_FOUND: {
-                            lastFoundDeviceAt[0] = System.currentTimeMillis();
-                            // Discovery has found a device. Get the BluetoothDevice
-                            // object and its info from the Intent.
-                            BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                            if (device == null) break;
-                            // String deviceName = device.getName();
-                            // String deviceHardwareAddress = device.getAddress(); // MAC address
-                            if (emitter.isDisposed()) return;
-                            emitter.onNext(new OkBluetoothDevice(device, OkBluetoothDevice.Type.NewFoundDevice));
-                        }
-                    }
+                if (!emitter.isDisposed())
+                    emitter.onNext(ConnectionStatus.connecting);
+                mAdapter.cancelDiscovery();
+                connectSocket.connect(); // block until connected.
+                socket = connectSocket;
+                connectionIsWorking = true;
+                if (!emitter.isDisposed())
+                    emitter.onNext(ConnectionStatus.connected);
+                while (connectionIsWorking) {
+                    Thread.sleep(1000);
                 }
-            };
-            // register receiver
-            IntentFilter filter = new IntentFilter();
-            filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);    // 开始扫描
-            filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);   // 扫描结束
-            filter.addAction(BluetoothDevice.ACTION_FOUND);                 // 扫描中，返回结果
-            filter.addAction(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED);    // 扫描模式改变
-            activity.registerReceiver(broadcastReceiver, filter);
-            adapter.startDiscovery();
-            // bonded devices
-            Set<BluetoothDevice> list = adapter.getBondedDevices();
-            for (BluetoothDevice device : list) {
-                if (emitter.isDisposed()) return;
-                emitter.onNext(new OkBluetoothDevice(device, OkBluetoothDevice.Type.BondedDevice));
+                emitter.onNext(ConnectionStatus.disconnect);
+            } catch (IOException | InterruptedException e) {
+                // e.printStackTrace();
+                if (!emitter.isDisposed()) {
+                    emitter.onError(e);
+                }
+                try {
+                    if (connectSocket != null) {
+                        connectSocket.close();
+                    }
+                } catch (IOException e2) {
+                    // e2.printStackTrace();
+                    if (!emitter.isDisposed())
+                        emitter.onError(e2);
+                }
+                if (!emitter.isDisposed()) {
+                    emitter.onNext(ConnectionStatus.fail);
+                    emitter.onComplete();
+                }
             }
         });
+    }
+
+    public Observable<OkBluetoothMessage> read() {
+        return Observable.create(emitter -> {
+            if (socket == null) {
+                emitter.onError(new OkBluetoothException("Please connect to this device first."));
+                return;
+            }
+            if (!socket.isConnected()) {
+                emitter.onError(new OkBluetoothException("Connection lost! Please connect to this device first."));
+                return;
+            }
+            try (InputStream in = socket.getInputStream()) {
+                int size = 0;
+                byte[] buffer = new byte[1024];
+                while (connectionIsWorking) {
+                    if (emitter.isDisposed()) break;
+                    size = in.read(buffer);
+                    byte[] output = new byte[size];
+                    System.arraycopy(buffer, 0, output, 0, size);
+                    emitter.onNext(new OkBluetoothMessage(device, output, System.currentTimeMillis()));
+                }
+            } catch (IOException e) {
+                if (emitter.isDisposed()) return;
+                emitter.onError(e);
+            }
+            if (!emitter.isDisposed() || !connectionIsWorking) {
+                emitter.onComplete();
+            }
+        });
+    }
+
+    public void disconnect() {
+        connectionIsWorking = false;
+        try {
+            if (socket == null) return;
+            if (!socket.isConnected()) return;
+            socket.close();
+            socket = null;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public Single<byte[]> write(byte[] data) {
+        return Single.create(emitter -> {
+            if (socket == null) {
+                emitter.onError(new OkBluetoothException("Please connect to this device first."));
+                return;
+            }
+            if (!socket.isConnected()) {
+                emitter.onError(new OkBluetoothException("Connection lost! Please connect to this device first."));
+                return;
+            }
+            try (OutputStream out = socket.getOutputStream()) {
+                out.write(data);
+                emitter.onSuccess(data);
+            } catch (IOException e) {
+                emitter.onError(e);
+            }
+        });
+    }
+
+    // getter
+
+    public BluetoothDevice getDevice() {
+        return device;
+    }
+
+    public Type getType() {
+        return type;
     }
 }
