@@ -106,32 +106,26 @@ public class OkBluetoothScanner {
                             if (device == null) break;
                             // String deviceName = device.getName();
                             // String deviceHardwareAddress = device.getAddress(); // MAC address
-                            if (device.getUuids() == null) {
-                                // noUuidDevices.put(device.getAddress(), device);
-                                device.fetchUuidsWithSdp();
-                            } else {
-                                if (emitter.isDisposed()) return;
-                                emitter.onNext(new OkBluetoothClient(device, OkBluetoothClient.Type.NewFoundDevice));
-                            }
+                            // if (device.getUuids() == null) {
+                            //     // noUuidDevices.put(device.getAddress(), device);
+                            //     device.fetchUuidsWithSdp();
+                            // } else {
+                            //     if (emitter.isDisposed()) return;
+                            //     emitter.onNext(new OkBluetoothClient(device, OkBluetoothClient.Type.NewFoundDevice));
+                            // }
+                            if (emitter.isDisposed()) return;
+                            emitter.onNext(new OkBluetoothClient(device, OkBluetoothClient.Type.NewFoundDevice));
                             break;
                         }
                         case BluetoothDevice.ACTION_UUID: {
-                            BluetoothDevice deviceExtra = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                            Parcelable[] uuidExtra = intent.getParcelableArrayExtra(BluetoothDevice.EXTRA_UUID);
-                            OkBluetoothClient client = new OkBluetoothClient(deviceExtra, OkBluetoothClient.Type.NewFoundDevice);
-                            if (uuidExtra != null) {
-                                client.setUuids(uuidExtra);
-                                // for (Parcelable p : uuidExtra) {
-                                // System.out.println("uuidExtra - " + p);
-                                // }
-                            }
-                            // else {
-                            // System.out.println("uuidExtra is still null");
-                            // deviceExtra.fetchUuidsWithSdp();
-                            // return;
+                            // BluetoothDevice deviceExtra = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                            // Parcelable[] uuidExtra = intent.getParcelableArrayExtra(BluetoothDevice.EXTRA_UUID);
+                            // OkBluetoothClient client = new OkBluetoothClient(deviceExtra, OkBluetoothClient.Type.NewFoundDevice);
+                            // if (uuidExtra != null) {
+                            //     client.setUuids(uuidExtra);
                             // }
-                            if (emitter.isDisposed()) return;
-                            emitter.onNext(client);
+                            // if (emitter.isDisposed()) return;
+                            // emitter.onNext(client);
                             // noUuidDevices.remove(deviceExtra.getAddress());
                             break;
                         }
