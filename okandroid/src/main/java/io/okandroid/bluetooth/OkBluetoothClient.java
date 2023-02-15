@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.os.Parcelable;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,6 +26,7 @@ public class OkBluetoothClient {
     // fields
     private BluetoothDevice device;
     private Type type;
+    private Parcelable[] uuids;
 
     public enum Type {
         BondedDevice, NewFoundDevice, Unknown,
@@ -170,5 +172,13 @@ public class OkBluetoothClient {
 
     public Type getType() {
         return type;
+    }
+
+    public Parcelable[] getUuids() {
+        return uuids;
+    }
+
+    public void setUuids(Parcelable[] uuids) {
+        this.uuids = uuids;
     }
 }

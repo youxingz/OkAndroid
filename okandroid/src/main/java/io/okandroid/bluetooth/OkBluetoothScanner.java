@@ -8,6 +8,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Parcelable;
 
 import java.util.Set;
 import java.util.Timer;
@@ -40,6 +41,9 @@ public class OkBluetoothScanner {
         this.activity = activity;
     }
 
+    // public void config() {
+    // }
+
     public Observable<OkBluetoothClient> scan() throws OkAndroidException, OkBluetoothException.BluetoothNotEnableException {
         return scan(false);
     }
@@ -59,7 +63,6 @@ public class OkBluetoothScanner {
             }
         }
         return Observable.create(emitter -> {
-            if (emitter.isDisposed()) return;
             // if 5sec stub, emitter.onComplete!
             final long[] lastFoundDeviceAt = {System.currentTimeMillis()};
             new Timer().schedule(new TimerTask() {
@@ -73,6 +76,8 @@ public class OkBluetoothScanner {
                     }
                 }
             }, 1000, 1000);
+            // devices (no uuids)
+            // Map<String, BluetoothDevice> noUuidDevices = new HashMap<>();
             broadcastReceiver = new BroadcastReceiver() {
                 public void onReceive(Context context, Intent intent) {
                     String action = intent.getAction();
@@ -98,8 +103,33 @@ public class OkBluetoothScanner {
                             if (device == null) break;
                             // String deviceName = device.getName();
                             // String deviceHardwareAddress = device.getAddress(); // MAC address
+                            if (device.getUuids() == null) {
+                                // noUuidDevices.put(device.getAddress(), device);
+                                device.fetchUuidsWithSdp();
+                            } else {
+                                if (emitter.isDisposed()) return;
+                                emitter.onNext(new OkBluetoothClient(device, OkBluetoothClient.Type.NewFoundDevice));
+                            }
+                            break;
+                        }
+                        case BluetoothDevice.ACTION_UUID: {
+                            BluetoothDevice deviceExtra = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                            Parcelable[] uuidExtra = intent.getParcelableArrayExtra(BluetoothDevice.EXTRA_UUID);
+                            OkBluetoothClient client = new OkBluetoothClient(deviceExtra, OkBluetoothClient.Type.NewFoundDevice);
+                            if (uuidExtra != null) {
+                                client.setUuids(uuidExtra);
+                                // for (Parcelable p : uuidExtra) {
+                                // System.out.println("uuidExtra - " + p);
+                                // }
+                            }
+                            // else {
+                            // System.out.println("uuidExtra is still null");
+                            // deviceExtra.fetchUuidsWithSdp();
+                            // return;
+                            // }
                             if (emitter.isDisposed()) return;
-                            emitter.onNext(new OkBluetoothClient(device, OkBluetoothClient.Type.NewFoundDevice));
+                            emitter.onNext(client);
+                            // noUuidDevices.remove(deviceExtra.getAddress());
                         }
                     }
                 }
@@ -110,6 +140,7 @@ public class OkBluetoothScanner {
             filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);   // 扫描结束
             filter.addAction(BluetoothDevice.ACTION_FOUND);                 // 扫描中，返回结果
             filter.addAction(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED);    // 扫描模式改变
+            filter.addAction(BluetoothDevice.ACTION_UUID);                  // 获取UUID
             activity.registerReceiver(broadcastReceiver, filter);
             adapter.startDiscovery();
             // bonded devices

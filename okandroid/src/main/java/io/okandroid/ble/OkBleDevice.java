@@ -16,6 +16,8 @@ import android.os.Build;
 
 import androidx.annotation.RequiresApi;
 
+import org.reactivestreams.Publisher;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -26,9 +28,12 @@ import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.ObservableEmitter;
 import io.reactivex.rxjava3.core.ObservableOnSubscribe;
+import io.reactivex.rxjava3.core.ObservableSource;
+import io.reactivex.rxjava3.core.Observer;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.core.SingleEmitter;
 import io.reactivex.rxjava3.core.SingleOnSubscribe;
+import io.reactivex.rxjava3.functions.Supplier;
 
 public class OkBleDevice {
 
@@ -191,15 +196,15 @@ public class OkBleDevice {
                     //                    Log.w(TAG, "BluetoothAdapter not initialized or unspecified address.");
                     //                    return false;
                     emitter.onError(new OkBluetoothException("BluetoothAdapter not initialized or unspecified address."));
+                    return;
                 }
 
                 // Previously connected device.  Try to reconnect.
                 if (mBluetoothGatt != null) {
-                    //                    Log.d(TAG, "Trying to use an existing mBluetoothGatt for connection.");
+                    // Log.d(TAG, "Trying to use an existing mBluetoothGatt for connection.");
                     if (mBluetoothGatt.connect()) {
-                        //                        connectionStatus = ConnectionStatus.connecting;
+                        // connectionStatus = ConnectionStatus.connecting;
                         emitter.onNext(ConnectionStatus.connecting);
-                        //                        return true;
                     }
                 }
 
@@ -214,8 +219,6 @@ public class OkBleDevice {
                     return;
                 }
                 mBluetoothGatt = device.connectGatt(context, autoConnect, gattCallback);
-                //                Log.d(TAG, "Trying to create a new connection.");
-                //                connectionStatus = ConnectionStatus.connecting;
                 emitter.onNext(ConnectionStatus.connecting);
             }
         });
