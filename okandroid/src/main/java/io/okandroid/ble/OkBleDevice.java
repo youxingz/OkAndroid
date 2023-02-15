@@ -16,8 +16,6 @@ import android.os.Build;
 
 import androidx.annotation.RequiresApi;
 
-import org.reactivestreams.Publisher;
-
 import java.util.List;
 import java.util.UUID;
 
@@ -28,12 +26,9 @@ import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.ObservableEmitter;
 import io.reactivex.rxjava3.core.ObservableOnSubscribe;
-import io.reactivex.rxjava3.core.ObservableSource;
-import io.reactivex.rxjava3.core.Observer;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.core.SingleEmitter;
 import io.reactivex.rxjava3.core.SingleOnSubscribe;
-import io.reactivex.rxjava3.functions.Supplier;
 
 public class OkBleDevice {
 
@@ -283,8 +278,8 @@ public class OkBleDevice {
             List<BluetoothGattService> serviceList = mBluetoothGatt.getServices();
             BluetoothGattCharacteristic characteristic = null;
             for (BluetoothGattService service : serviceList) {
-                if (characteristic == null) {
-                    characteristic = service.getCharacteristic(UUID.fromString(uuid));
+                characteristic = service.getCharacteristic(UUID.fromString(uuid));
+                if (characteristic != null) {
                     break;
                 }
             }

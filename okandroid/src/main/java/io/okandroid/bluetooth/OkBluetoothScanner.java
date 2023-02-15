@@ -4,12 +4,15 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanResult;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Parcelable;
 
+import java.util.List;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -130,6 +133,10 @@ public class OkBluetoothScanner {
                             if (emitter.isDisposed()) return;
                             emitter.onNext(client);
                             // noUuidDevices.remove(deviceExtra.getAddress());
+                            break;
+                        }
+                        case BluetoothDevice.ACTION_PAIRING_REQUEST: {
+                            break;
                         }
                     }
                 }
@@ -141,6 +148,7 @@ public class OkBluetoothScanner {
             filter.addAction(BluetoothDevice.ACTION_FOUND);                 // 扫描中，返回结果
             filter.addAction(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED);    // 扫描模式改变
             filter.addAction(BluetoothDevice.ACTION_UUID);                  // 获取UUID
+            filter.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST);       // 待配对设备
             activity.registerReceiver(broadcastReceiver, filter);
             adapter.startDiscovery();
             // bonded devices
