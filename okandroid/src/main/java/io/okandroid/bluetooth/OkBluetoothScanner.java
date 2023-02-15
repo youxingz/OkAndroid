@@ -91,7 +91,7 @@ public class OkBluetoothScanner {
                                 activity.unregisterReceiver(broadcastReceiver);
                                 broadcastReceiver = null;
                             }
-                            if (!emitter.isDisposed()) return;
+                            if (emitter.isDisposed()) return;
                             emitter.onComplete();
                             break;
                         }
