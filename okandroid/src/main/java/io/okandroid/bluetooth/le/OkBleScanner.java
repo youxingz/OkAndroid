@@ -8,6 +8,7 @@ import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -34,6 +35,10 @@ public class OkBleScanner {
     public OkBleScanner(Context context) {
         this.context = context;
         this.adapter = BluetoothAdapter.getDefaultAdapter();
+    }
+
+    public Observable<OkBleClient> scan() {
+        return scan(new ScanSettings.Builder().build(), new ArrayList<>());
     }
 
     public Observable<OkBleClient> scan(ScanSettings settings, List<ScanFilter> filters) {
