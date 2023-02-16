@@ -4,21 +4,16 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.le.ScanCallback;
-import android.bluetooth.le.ScanResult;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.Parcelable;
 
-import java.util.List;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import io.okandroid.exception.OkAndroidException;
-import io.okandroid.exception.OkBluetoothException;
 import io.reactivex.rxjava3.core.Observable;
 
 /**
@@ -47,15 +42,15 @@ public class OkBluetoothScanner {
     // public void config() {
     // }
 
-    public Observable<OkBluetoothClient> scan() throws OkAndroidException, OkBluetoothException.BluetoothNotEnableException {
+    public Observable<OkBluetoothClient> scan() throws OkBluetoothException, OkBluetoothException.BluetoothNotEnableException {
         return scan(false);
     }
 
     @SuppressLint("MissingPermission")
-    public Observable<OkBluetoothClient> scan(boolean gotoSettingIfNotTurnOn) throws OkAndroidException, OkBluetoothException.BluetoothNotEnableException {
+    public Observable<OkBluetoothClient> scan(boolean gotoSettingIfNotTurnOn) throws OkBluetoothException, OkBluetoothException.BluetoothNotEnableException {
         BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
         if (adapter == null) {
-            throw new OkAndroidException("Device does not support bluetooth");
+            throw new OkBluetoothException("Device does not support bluetooth");
         }
         if (!adapter.isEnabled()) {
             if (gotoSettingIfNotTurnOn) {
@@ -66,7 +61,7 @@ public class OkBluetoothScanner {
             }
         }
         return Observable.create(emitter -> {
-            // if 5sec stub, emitter.onComplete!
+            // if 5sec stuck, emitter.onComplete!
             final long[] lastFoundDeviceAt = {System.currentTimeMillis()};
             new Timer().schedule(new TimerTask() {
                 @Override

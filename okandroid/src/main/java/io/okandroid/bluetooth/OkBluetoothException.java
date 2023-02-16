@@ -1,4 +1,4 @@
-package io.okandroid.exception;
+package io.okandroid.bluetooth;
 
 public class OkBluetoothException extends Exception {
     public OkBluetoothException(String message) {
@@ -19,11 +19,26 @@ public class OkBluetoothException extends Exception {
 
     public static class DeviceWriteException extends Exception {
         private int code;
+
         public DeviceWriteException(String message) {
             super(message);
         }
+
         public DeviceWriteException(String message, int code) {
             super(message);
+            this.code = code;
+        }
+
+        public int getCode() {
+            return code;
+        }
+    }
+
+    public static class ErrorCodeException extends Exception {
+        private int code;
+
+        public ErrorCodeException(int code) {
+            super("Error: " + code);
             this.code = code;
         }
 

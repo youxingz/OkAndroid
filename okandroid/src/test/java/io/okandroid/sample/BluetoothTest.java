@@ -6,7 +6,7 @@ import io.okandroid.bluetooth.OkBluetoothScanner;
 import io.okandroid.bluetooth.OkBluetoothClient;
 import io.okandroid.bluetooth.OkBluetoothMessage;
 import io.okandroid.exception.OkAndroidException;
-import io.okandroid.exception.OkBluetoothException;
+import io.okandroid.bluetooth.OkBluetoothException;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.Observer;
@@ -15,7 +15,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class BluetoothTest {
     //    @Test
-    public void client() throws OkAndroidException, OkBluetoothException.BluetoothNotEnableException {
+    public void client() throws OkBluetoothException.BluetoothNotEnableException, OkBluetoothException {
         OkBluetoothScanner client = new OkBluetoothScanner(new Activity());
         final OkBluetoothClient[] okDevice = {null};
         client.scan(true).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<OkBluetoothClient>() {
