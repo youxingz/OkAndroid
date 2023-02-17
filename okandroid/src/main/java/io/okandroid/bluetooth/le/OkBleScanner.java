@@ -45,7 +45,7 @@ public class OkBleScanner {
         return Observable.create(new ObservableOnSubscribe<OkBleClient>() {
             @SuppressLint("MissingPermission")
             @Override
-            public void subscribe(@NonNull ObservableEmitter<OkBleClient> emitter) throws Throwable {
+            public void subscribe(@NonNull ObservableEmitter<OkBleClient> emitter) {
                 // if 5sec stuck, emitter.onComplete!
                 final long[] lastFoundDeviceAt = {System.currentTimeMillis()};
                 new Timer().schedule(new TimerTask() {
