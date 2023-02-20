@@ -11,7 +11,7 @@ public interface ProtocolClient {
 
     ProtocolClient withRetry(int times);
 
-    Single<Response> send(Request request) throws ProtocolException;
+    Single<Response> send(Request request);
 
     public interface Request {
         int getRequestId();

@@ -1,6 +1,9 @@
 package io.okandroid.bluetooth.reliable_protocol;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.Stack;
 
 import io.okandroid.bluetooth.OkBluetoothClient;
 import io.okandroid.bluetooth.OkBluetoothMessage;
@@ -12,7 +15,10 @@ import io.reactivex.rxjava3.core.SingleObserver;
 import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
-public class SimpleProtocolClient implements ProtocolClient {
+/**
+ * command: line + \n\r
+ */
+public class SimpleStringProtocolClient implements ProtocolClient {
     private int timeout = 2000;
     private int retryTimes = 3;
     private OkBluetoothClient client;
@@ -20,15 +26,17 @@ public class SimpleProtocolClient implements ProtocolClient {
 
     // looper
     private HashMap<Integer, Request> requestPool;
-    private HashMap<Integer, Response> responsePool;
     private HashMap<Integer, Boolean> requestSend;
+    private HashMap<Integer, Response> responsePool;
+    private Stack<String> responseStack;
     private Codecs encoder;
 
-    public SimpleProtocolClient(OkBluetoothClient client, Codecs encoder) {
+    public SimpleStringProtocolClient(OkBluetoothClient client, Codecs encoder) {
         this.client = client;
         this.requestPool = new HashMap<>();
         this.requestSend = new HashMap<>();
         this.responsePool = new HashMap<>();
+        this.responseStack = new Stack<>();
         this.encoder = encoder;
     }
 
@@ -45,11 +53,13 @@ public class SimpleProtocolClient implements ProtocolClient {
     }
 
     @Override
-    public Single<Response> send(Request request) throws ProtocolException {
-        if (!client.isConnecting())
-            throw new ProtocolException("Please make sure the client is connecting.");
-        if (!isReading) startReading();
+    public Single<Response> send(Request request) {
         return Single.create(emitter -> {
+            if (!client.isConnecting()) {
+                if (emitter.isDisposed()) return;
+                emitter.onError(new ProtocolException("Please make sure the client is connecting."));
+            }
+            if (!isReading) startReading();
             // wait loop...
             int count = 0;
             while (count++ < retryTimes) {
@@ -64,19 +74,21 @@ public class SimpleProtocolClient implements ProtocolClient {
                     if (resp != null) {
                         if (!resp.available()) continue;
                         // success!
+                        if (emitter.isDisposed()) return;
                         emitter.onSuccess(resp);
                         responsePool.remove(request.getRequestId());
                         break;
                     }
                     Thread.sleep(50); // 50ms
                 }
+                if (emitter.isDisposed()) return;
                 emitter.onError(new ProtocolException("Request Timeout!"));
             }
         });
     }
 
     private void resend(Request request) {
-        client.write(encoder.encode(request)).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(new SingleObserver<byte[]>() {
+        client.write(encoder.encode(request).getBytes(StandardCharsets.UTF_8)).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(new SingleObserver<byte[]>() {
             @Override
             public void onSubscribe(@NonNull Disposable d) {
                 // sending...
@@ -107,7 +119,28 @@ public class SimpleProtocolClient implements ProtocolClient {
 
             @Override
             public void onNext(@NonNull OkBluetoothMessage okBluetoothMessage) {
-                Response response = encoder.decode(okBluetoothMessage.getData());
+                String data = new String(okBluetoothMessage.getData(), Charset.defaultCharset());
+                String lastPref = "";
+                if (!responseStack.empty()) {
+                    lastPref = responseStack.pop();
+                    if (lastPref == null) lastPref = "";
+                }
+                String line = lastPref + data;
+                if (!line.contains("\n") && !line.contains("\r")) {
+                    // continue onNext.
+                    responseStack.push(line);
+                    return;
+                }
+                // success
+                int index = line.indexOf("\n");
+                if (index < 0) {
+                    index = line.indexOf("\r");
+                }
+                String cmd = line.substring(0, index);
+                String rest = line.substring(index).replaceAll("\n", "").replaceAll("\r", "");
+                responseStack.push(rest);
+                // resp.
+                Response response = encoder.decode(cmd);
                 if (response.available()) {
                     int reqId = response.getRequestId();
                     Boolean sending = requestSend.get(reqId);
@@ -135,9 +168,9 @@ public class SimpleProtocolClient implements ProtocolClient {
      * make sure you have implement this protocol.
      */
     public interface Codecs {
-        byte[] encode(ProtocolClient.Request request);
+        String encode(ProtocolClient.Request request);
 
-        ProtocolClient.Response decode(byte[] data);
+        ProtocolClient.Response decode(String data);
     }
 
 }
