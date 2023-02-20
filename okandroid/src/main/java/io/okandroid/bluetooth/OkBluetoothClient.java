@@ -93,6 +93,10 @@ public class OkBluetoothClient {
         });
     }
 
+    public boolean isConnecting() {
+        return connectionIsWorking;
+    }
+
     public Observable<OkBluetoothMessage> read() {
         return Observable.create(emitter -> {
             if (socket == null) {
