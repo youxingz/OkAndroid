@@ -3,6 +3,7 @@ package io.okandroid.bluetooth.reliable_protocol;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Stack;
 
 import io.okandroid.bluetooth.OkBluetoothClient;
@@ -25,17 +26,17 @@ public class SimpleStringProtocolClient implements ProtocolClient {
     private boolean isReading = false;
 
     // looper
-    private HashMap<Integer, Request> requestPool;
-    private HashMap<Integer, Boolean> requestSend;
-    private HashMap<Integer, Response> responsePool;
+    private Hashtable<String, Request> requestPool;
+    private Hashtable<String, Boolean> requestSend;
+    private Hashtable<String, Response> responsePool;
     private Stack<String> responseStack;
     private Codecs encoder;
 
     public SimpleStringProtocolClient(OkBluetoothClient client, Codecs encoder) {
         this.client = client;
-        this.requestPool = new HashMap<>();
-        this.requestSend = new HashMap<>();
-        this.responsePool = new HashMap<>();
+        this.requestPool = new Hashtable<>();
+        this.requestSend = new Hashtable<>();
+        this.responsePool = new Hashtable<>();
         this.responseStack = new Stack<>();
         this.encoder = encoder;
     }
@@ -68,22 +69,27 @@ public class SimpleStringProtocolClient implements ProtocolClient {
                 long ddl = System.currentTimeMillis() + timeout;
                 // timeout!
                 while (System.currentTimeMillis() <= ddl) {
-                    Boolean sending = requestSend.get(request.getRequestId());
-                    if (sending != null && sending) continue; // still sending...
-                    Response resp = responsePool.get(request.getRequestId());
-                    if (resp != null) {
-                        if (!resp.available()) continue;
-                        // success!
-                        if (emitter.isDisposed()) return;
-                        emitter.onSuccess(resp);
-                        responsePool.remove(request.getRequestId());
-                        break;
+                    Thread.sleep(10);
+                    synchronized (SimpleStringProtocolClient.class) {
+                        Boolean sending = requestSend.get(request.getRequestId());
+                        if (sending != null && sending) continue; // still sending...
+                        Response resp = responsePool.get(request.getRequestId());
+                        if (resp != null) {
+                            // if (!resp.available()) continue;
+                            // success!
+                            if (emitter.isDisposed()) return;
+                            emitter.onSuccess(resp);
+                            responsePool.remove(request.getRequestId());
+                            return;
+                        }
                     }
-                    Thread.sleep(50); // 50ms
+                    Thread.sleep(40); // 10+40=50ms
                 }
-                if (emitter.isDisposed()) return;
-                emitter.onError(new ProtocolException("Request Timeout!"));
+                // if (emitter.isDisposed()) return;
+                // emitter.onError(new ProtocolException("Request Timeout! Try again."));
             }
+            if (emitter.isDisposed()) return;
+            emitter.onError(new ProtocolException("Request Timeout! " + (count * timeout) + " ms in total."));
         });
     }
 
@@ -141,14 +147,17 @@ public class SimpleStringProtocolClient implements ProtocolClient {
                 responseStack.push(rest);
                 // resp.
                 Response response = encoder.decode(cmd);
-                if (response.available()) {
-                    int reqId = response.getRequestId();
-                    Boolean sending = requestSend.get(reqId);
-                    if (sending != null) {
-                        // finish it.
-                        requestSend.remove(reqId);
-                    }
+                if (response == null) return;
+                // if (response.available()) {
+                String reqId = response.getRequestId();
+                Boolean sending = requestSend.get(reqId);
+                if (sending != null) {
+                    // finish it.
+                    // System.out.println(">> finish: " + reqId);
+                    responsePool.put(reqId, response);
+                    requestSend.remove(reqId); // tag it
                 }
+                // }
             }
 
             @Override

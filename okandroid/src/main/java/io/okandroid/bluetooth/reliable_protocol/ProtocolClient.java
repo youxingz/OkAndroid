@@ -14,14 +14,14 @@ public interface ProtocolClient {
     Single<Response> send(Request request);
 
     public interface Request {
-        int getRequestId();
+        String getRequestId();
     }
 
     public interface Response {
 
         boolean available();
 
-        abstract int getRequestId();
+        abstract String getRequestId();
     }
 
     public class ProtocolException extends Exception {
