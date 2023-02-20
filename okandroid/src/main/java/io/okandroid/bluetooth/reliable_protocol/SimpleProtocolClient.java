@@ -16,6 +16,7 @@ public class SimpleProtocolClient implements ProtocolClient {
     private int timeout = 2000;
     private int retryTimes = 3;
     private OkBluetoothClient client;
+    private boolean isReading = false;
 
     // looper
     private HashMap<Integer, Request> requestPool;
@@ -29,7 +30,6 @@ public class SimpleProtocolClient implements ProtocolClient {
         this.requestSend = new HashMap<>();
         this.responsePool = new HashMap<>();
         this.encoder = encoder;
-        this.startReading();
     }
 
     @Override
@@ -48,6 +48,7 @@ public class SimpleProtocolClient implements ProtocolClient {
     public Single<Response> send(Request request) throws ProtocolException {
         if (!client.isConnecting())
             throw new ProtocolException("Please make sure the client is connecting.");
+        if (!isReading) startReading();
         return Single.create(emitter -> {
             // wait loop...
             int count = 0;
@@ -97,6 +98,7 @@ public class SimpleProtocolClient implements ProtocolClient {
     }
 
     private void startReading() {
+        isReading = true;
         client.read().subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<OkBluetoothMessage>() {
             @Override
             public void onSubscribe(@NonNull Disposable d) {
@@ -123,7 +125,7 @@ public class SimpleProtocolClient implements ProtocolClient {
 
             @Override
             public void onComplete() {
-
+                isReading = false;
             }
         });
     }
