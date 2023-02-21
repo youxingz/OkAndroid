@@ -3,7 +3,7 @@ package io.okandroid.bluetooth.reliable_protocol;
 import io.reactivex.rxjava3.core.Single;
 
 /**
- *
+ * response = ProtocolClient().withRetry(5).send(request)
  */
 public interface ProtocolClient {
 
@@ -19,6 +19,9 @@ public interface ProtocolClient {
 
     public interface Response {
 
+        /**
+         * @return {true} if this response is available, i.e., would not be ignored.
+         */
         boolean available();
 
         abstract String getRequestId();

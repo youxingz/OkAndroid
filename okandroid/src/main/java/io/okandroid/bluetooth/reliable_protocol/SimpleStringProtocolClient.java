@@ -148,16 +148,16 @@ public class SimpleStringProtocolClient implements ProtocolClient {
                 // resp.
                 Response response = encoder.decode(cmd);
                 if (response == null) return;
-                // if (response.available()) {
-                String reqId = response.getRequestId();
-                Boolean sending = requestSend.get(reqId);
-                if (sending != null) {
-                    // finish it.
-                    // System.out.println(">> finish: " + reqId);
-                    responsePool.put(reqId, response);
-                    requestSend.remove(reqId); // tag it
+                if (response.available()) {
+                    String reqId = response.getRequestId();
+                    Boolean sending = requestSend.get(reqId);
+                    if (sending != null) {
+                        // finish it.
+                        // System.out.println(">> finish: " + reqId);
+                        responsePool.put(reqId, response);
+                        requestSend.remove(reqId); // tag it
+                    }
                 }
-                // }
             }
 
             @Override
