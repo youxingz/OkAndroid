@@ -64,7 +64,7 @@ public class Modbus {
     }
 
     public void send(String cmd) throws ModbusTransportException {
-        ModbusResponse response = modbusMaster.send(ModbusRequest.createModbusRequest(new ByteQueue(cmd)));
+        ModbusResponse response = modbusMaster.send(ModbusRequest.createModbusRequest(new ByteQueue(new byte[]{5, 3, 2, 0, (byte) 0xdc, (byte) 0x48, (byte) 0x1d, 0})));
         if (response.isException()) {
             // exception
             System.out.println(response.getExceptionMessage());
