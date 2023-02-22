@@ -64,11 +64,15 @@ public class Modbus {
         });
     }
 
-    public void send(ByteQueue queue) throws ModbusTransportException {
-        ModbusResponse response = modbusMaster.send(ModbusRequest.createModbusRequest(queue));
-        if (response.isException()) {
-            // exception
-            System.out.println(response.getExceptionMessage());
+    public void send(ByteQueue queue) {
+        try {
+            ModbusResponse response = modbusMaster.send(ModbusRequest.createModbusRequest(queue));
+            if (response.isException()) {
+                // exception
+                System.out.println(response.getExceptionMessage());
+            }
+        } catch (ModbusTransportException e) {
+            e.printStackTrace();
         }
     }
 
