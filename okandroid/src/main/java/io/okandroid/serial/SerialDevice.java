@@ -9,6 +9,8 @@ import java.io.OutputStream;
 
 public class SerialDevice {
     private SerialPort serialPort;
+    private InputStream inputStream;
+    private OutputStream outputStream;
     private File device;
     private int baudRate;
     private int dataBits = 8;
@@ -41,7 +43,10 @@ public class SerialDevice {
     }
 
     public void open() throws IOException {
+        SerialPort.setSuPath("/system/xbin/su");
         this.serialPort = new SerialPort(device, baudRate, dataBits, parity, stopBits, flags);
+        this.inputStream = serialPort.getInputStream();
+        this.outputStream = serialPort.getOutputStream();
     }
 
     public SerialPort getSerialPort() {
@@ -49,13 +54,11 @@ public class SerialDevice {
     }
 
     public InputStream getInputStream() {
-        if (serialPort == null) return null;
-        return serialPort.getInputStream();
+        return inputStream;
     }
 
     public OutputStream getOutputStream() {
-        if (serialPort == null) return null;
-        return serialPort.getOutputStream();
+        return outputStream;
     }
 
     public int getBaudRate() {
@@ -82,6 +85,22 @@ public class SerialDevice {
         if (serialPort != null) {
             serialPort.close();
             serialPort = null;
+        }
+        if (inputStream != null) {
+            try {
+                inputStream.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            inputStream = null;
+        }
+        if (outputStream != null) {
+            try {
+                outputStream.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            outputStream = null;
         }
     }
 

@@ -9,6 +9,7 @@ import com.serotonin.modbus4j.msg.ModbusResponse;
 import com.serotonin.modbus4j.serial.SerialPortWrapper;
 import com.serotonin.modbus4j.sero.util.queue.ByteQueue;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
@@ -63,8 +64,8 @@ public class Modbus {
         });
     }
 
-    public void send(String cmd) throws ModbusTransportException {
-        ModbusResponse response = modbusMaster.send(ModbusRequest.createModbusRequest(new ByteQueue(new byte[]{5, 3, 2, 0, (byte) 0xdc, (byte) 0x48, (byte) 0x1d, 0})));
+    public void send(ByteQueue queue) throws ModbusTransportException {
+        ModbusResponse response = modbusMaster.send(ModbusRequest.createModbusRequest(queue));
         if (response.isException()) {
             // exception
             System.out.println(response.getExceptionMessage());

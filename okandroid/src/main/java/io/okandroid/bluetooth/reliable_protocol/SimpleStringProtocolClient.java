@@ -2,13 +2,11 @@ package io.okandroid.bluetooth.reliable_protocol;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Stack;
 
 import io.okandroid.bluetooth.OkBluetoothClient;
 import io.okandroid.bluetooth.OkBluetoothMessage;
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.Observer;
 import io.reactivex.rxjava3.core.Single;
@@ -54,47 +52,61 @@ public class SimpleStringProtocolClient implements ProtocolClient {
     }
 
     @Override
-    public Single<Response> send(Request request) {
-        return Single.create(emitter -> {
-            if (!client.isConnecting()) {
-                if (emitter.isDisposed()) return;
-                emitter.onError(new ProtocolException("Please make sure the client is connecting."));
-            }
-            if (!isReading) startReading();
-            // wait loop...
-            int count = 0;
-            while (count++ < retryTimes) {
-                resend(request);
-                // read back.
-                long ddl = System.currentTimeMillis() + timeout;
-                // timeout!
+    public Response sendSync(Request request) throws ProtocolException {
+        if (!client.isConnecting()) {
+            throw new ProtocolException("Please make sure the client is connecting.");
+        }
+        if (!isReading) startReading();
+        // set sending status.
+        requestSend.put(request.getRequestId(), true);
+        requestPool.put(request.getRequestId(), request);
+        // wait loop...
+        int count = 0;
+        while (count++ < retryTimes) {
+            resend(request);
+            // read back.
+            long ddl = System.currentTimeMillis() + timeout;
+            // timeout!
+            try {
                 while (System.currentTimeMillis() <= ddl) {
                     Thread.sleep(10);
-                    synchronized (SimpleStringProtocolClient.class) {
-                        Boolean sending = requestSend.get(request.getRequestId());
-                        if (sending != null && sending) continue; // still sending...
-                        Response resp = responsePool.get(request.getRequestId());
-                        if (resp != null) {
-                            // if (!resp.available()) continue;
-                            // success!
-                            if (emitter.isDisposed()) return;
-                            emitter.onSuccess(resp);
-                            responsePool.remove(request.getRequestId());
-                            return;
-                        }
+                    // synchronized (SimpleStringProtocolClient.class) {
+                    Boolean sending = requestSend.get(request.getRequestId());
+                    if (sending != null && sending) continue; // still sending...
+                    Response resp = responsePool.get(request.getRequestId());
+                    if (resp != null) {
+                        // if (!resp.available()) continue;
+                        // success!
+                        responsePool.remove(request.getRequestId());
+                        // System.out.println(">> SUCCESS! " + request.getRequestId());
+                        return resp;
                     }
+                    // }
                     Thread.sleep(40); // 10+40=50ms
                 }
-                // if (emitter.isDisposed()) return;
-                // emitter.onError(new ProtocolException("Request Timeout! Try again."));
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-            if (emitter.isDisposed()) return;
-            emitter.onError(new ProtocolException("Request Timeout! " + (count * timeout) + " ms in total."));
+        }
+        throw new ProtocolException("Request Timeout! " + (retryTimes * timeout) + " ms in total.");
+    }
+
+    @Override
+    public Single<Response> send(Request request) {
+        return Single.create(emitter -> {
+            try {
+                Response response = sendSync(request);
+                if (emitter.isDisposed()) return;
+                emitter.onSuccess(response);
+            } catch (ProtocolException e) {
+                if (emitter.isDisposed()) return;
+                emitter.onError(e);
+            }
         });
     }
 
     private void resend(Request request) {
-        client.write(encoder.encode(request).getBytes(StandardCharsets.UTF_8)).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(new SingleObserver<byte[]>() {
+        client.write(encoder.encode(request).getBytes(StandardCharsets.UTF_8)).subscribeOn(Schedulers.io()).observeOn(Schedulers.newThread()).subscribe(new SingleObserver<byte[]>() {
             @Override
             public void onSubscribe(@NonNull Disposable d) {
                 // sending...
@@ -103,8 +115,8 @@ public class SimpleStringProtocolClient implements ProtocolClient {
             @Override
             public void onSuccess(byte @NonNull [] bytes) {
                 // read callback
-                requestSend.put(request.getRequestId(), true);
-                requestPool.put(request.getRequestId(), request);
+                // requestSend.put(request.getRequestId(), true);
+                // requestPool.put(request.getRequestId(), request);
             }
 
             @Override
@@ -117,7 +129,8 @@ public class SimpleStringProtocolClient implements ProtocolClient {
 
     private void startReading() {
         isReading = true;
-        client.read().subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<OkBluetoothMessage>() {
+        // Plz! observe on a new thread.
+        client.read().subscribeOn(Schedulers.io()).observeOn(Schedulers.newThread()).subscribe(new Observer<OkBluetoothMessage>() {
             @Override
             public void onSubscribe(@NonNull Disposable d) {
                 // start app.
@@ -126,6 +139,7 @@ public class SimpleStringProtocolClient implements ProtocolClient {
             @Override
             public void onNext(@NonNull OkBluetoothMessage okBluetoothMessage) {
                 String data = new String(okBluetoothMessage.getData(), Charset.defaultCharset());
+                // System.out.println("\t[][][READ]... " + data);
                 String lastPref = "";
                 if (!responseStack.empty()) {
                     lastPref = responseStack.pop();
@@ -143,7 +157,7 @@ public class SimpleStringProtocolClient implements ProtocolClient {
                     index = line.indexOf("\r");
                 }
                 String cmd = line.substring(0, index);
-                String rest = line.substring(index).replaceAll("\n", "").replaceAll("\r", "");
+                String rest = line.substring(index + 1); // .replaceAll("\n", "").replaceAll("\r", "");
                 responseStack.push(rest);
                 // resp.
                 Response response = encoder.decode(cmd);
@@ -154,6 +168,7 @@ public class SimpleStringProtocolClient implements ProtocolClient {
                     if (sending != null) {
                         // finish it.
                         // System.out.println(">> finish: " + reqId);
+                        // System.out.println(">> finish. size: " + responsePool.size());
                         responsePool.put(reqId, response);
                         requestSend.remove(reqId); // tag it
                     }
