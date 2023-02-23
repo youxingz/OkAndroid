@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <TextView
+        android:id="@+id/hint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="12dp"
+        android:text="⚠️注意：蠕动泵电机和驱动上电后需要首选设置速度再进行启停操作，如果启动不了，需要断电再在上电后重新设置速度。" />
+
+    <GridLayout
+        android:id="@+id/control_container"
+        android:layout_below="@+id/hint"
+        android:columnCount="2"
+        android:rowCount="2"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:useDefaultMargins="true"></GridLayout>
+</RelativeLayout>

@@ -16,4 +16,5 @@ dependencyResolutionManagement {
 }
 rootProject.name = "OkAndroid"
 include ':okandroid'
-include ':sample'
+//include ':sample'
+include ':motor'

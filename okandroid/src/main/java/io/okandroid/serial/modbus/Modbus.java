@@ -12,6 +12,7 @@ import com.serotonin.modbus4j.sero.util.queue.ByteQueue;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.zip.CRC32;
 
 import io.okandroid.serial.SerialDevice;
 
