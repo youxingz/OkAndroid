@@ -16,21 +16,21 @@ import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 
 
-class ControlPane(context: Context, val device: SerialDevice, val slaveId: Int) :
+class ControlPane(context: Context, private val device: SerialDevice, private val slaveId: Int) :
     LinearLayout(context) {
 
-    lateinit var pump: JieHengPeristalticPumpObservable
-    lateinit var titleText: TextView
-    lateinit var btnTurn: ToggleButton
+    private lateinit var pump: JieHengPeristalticPumpObservable
+    private lateinit var titleText: TextView
+    private lateinit var btnTurn: ToggleButton
 
     @SuppressLint("UseSwitchCompatOrMaterialCode")
-    lateinit var switchDirection: Switch
-    lateinit var textVelocity: TextView
-    lateinit var btnVelocity: ToggleButton
-    lateinit var btnVelocityEdit: Button
-    lateinit var editVelocity: EditText
+    private lateinit var switchDirection: Switch
+    private lateinit var textVelocity: TextView
+    private lateinit var btnVelocity: ToggleButton
+    private lateinit var btnVelocityEdit: Button
+    private lateinit var editVelocity: EditText
 
-    lateinit var root: View
+    private lateinit var root: View
 
     private var disposableVelocity: Disposable? = null
     private var speed: Int = 0

@@ -1,6 +1,7 @@
 package io.okandroid.sensor.motor;
 
 import com.serotonin.modbus4j.ModbusMaster;
+import com.serotonin.modbus4j.base.ModbusUtils;
 import com.serotonin.modbus4j.exception.ModbusTransportException;
 import com.serotonin.modbus4j.msg.ReadCoilsResponse;
 import com.serotonin.modbus4j.msg.ReadHoldingRegistersRequest;
@@ -10,9 +11,11 @@ import com.serotonin.modbus4j.msg.ReadHoldingRegistersRequest;
  */
 public class LeadShine {
     private ModbusMaster modbus;
+    private int slaveId;
 
-    public LeadShine(ModbusMaster master) {
+    public LeadShine(ModbusMaster master, int slaveId) {
         this.modbus = master;
+        this.slaveId = slaveId;
     }
 
     /**
@@ -21,20 +24,13 @@ public class LeadShine {
      *
      * @return 开环：0, 闭环: 2
      */
-    public int loopMode(int slaveId) {
-        try {
-            ReadCoilsResponse response = (ReadCoilsResponse) modbus.send(new ReadHoldingRegistersRequest(slaveId, 0x0003, 1));
-            byte[] data = response.getData();
-            System.out.println("====================");
-            System.out.println("0x0003: length" + data.length);
-            return data[data.length - 1];
-        } catch (ModbusTransportException e) {
-            e.printStackTrace();
-            return -1;
-        }
+    public int loopMode() throws ModbusTransportException {
+        ReadCoilsResponse response = (ReadCoilsResponse) modbus.send(new ReadHoldingRegistersRequest(slaveId, 0x0003, 2));
+        byte[] data = response.getData();
+        return ModbusUtils.toShort(data[0], data[1]);
     }
 
-    public void loopMode(int slaveId, int mode) {
+    public void loopMode(int mode) {
     }
 
     /**
@@ -43,11 +39,11 @@ public class LeadShine {
      *
      * @return 0: 正, 1: 负
      */
-    public int direction(int slaveId) {
+    public int direction() {
         return -1;
     }
 
-    public void direction(int slaveId, int direction) {
+    public void direction(int direction) {
     }
 
     /**
@@ -55,11 +51,11 @@ public class LeadShine {
      *
      * @return 0-3000, default: 25
      */
-    public int positionKp(int slaveId) {
+    public int positionKp() {
         return -1;
     }
 
-    public void positionKp(int slaveId, int kp) {
+    public void positionKp(int kp) {
 
     }
 
@@ -68,11 +64,11 @@ public class LeadShine {
      *
      * @return 0-3000, default: 0
      */
-    public int positionKpH(int slaveId) {
+    public int positionKpH() {
         return -1;
     }
 
-    public void positionKpH(int slaveId, int kpH) {
+    public void positionKpH(int kpH) {
     }
 
     /**
@@ -80,11 +76,11 @@ public class LeadShine {
      *
      * @return 0-3000, default: 3
      */
-    public int velocityKI(int slaveId) {
+    public int velocityKI() {
         return -1;
     }
 
-    public void velocityKI(int slaveId, int kI) {
+    public void velocityKI(int kI) {
     }
 
     /**
@@ -92,11 +88,11 @@ public class LeadShine {
      *
      * @return 0-3000, default: 25
      */
-    public int velocityKp(int slaveId) {
+    public int velocityKp() {
         return -1;
     }
 
-    public void velocityKp(int slaveId, int kp) {
+    public void velocityKp(int kp) {
     }
 
     /**
@@ -105,7 +101,7 @@ public class LeadShine {
      *
      * @return 1: 开启, 0: 关闭
      */
-    public int autoRun(int slaveId) {
+    public int autoRun() {
         return -1;
     }
 
@@ -116,7 +112,7 @@ public class LeadShine {
      *
      * @return rpm
      */
-    public int realtimeVelocity(int slaveId) {
+    public int realtimeVelocity() {
         return -1;
     }
 
@@ -133,7 +129,7 @@ public class LeadShine {
      *
      * @return
      */
-    public int realtimeException(int slaveId) {
+    public int realtimeException() {
         return -1;
     }
 }

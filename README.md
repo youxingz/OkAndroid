@@ -1,6 +1,6 @@
 ### OkAndroid
 
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[//]: # ([![License]&#40;https://img.shields.io/badge/License-Apache_2.0-blue.svg&#41;]&#40;https://opensource.org/licenses/Apache-2.0&#41;)
 
 This project includes:
 
@@ -9,7 +9,6 @@ This project includes:
 - `HTTP Server/Client`
 - `Bluetooth`: A Rx-style bluetooth framework.
 - `Wi-Fi`
-- `GPS`
 - `Audio`
 - `Screen`
 - ...
