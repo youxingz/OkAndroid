@@ -8,7 +8,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.OkAndroid">
         <activity
-            android:name=".LeadShineActivity"
+            android:name=".leadshine.LeadShineActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -17,7 +17,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".MainActivity"
+            android:name=".pump.PumpActivity"
             android:exported="true"></activity>
     </application>
 

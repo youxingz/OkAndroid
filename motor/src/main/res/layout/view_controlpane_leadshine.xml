@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/control_pane"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_centerHorizontal="true"
+    android:layout_margin="16dp"
+    android:background="@drawable/border"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <TextView
+        android:id="@+id/title_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="6dp"
+        android:text="电机"
+        android:textColor="@color/black"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <GridLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:columnCount="2"
+        android:rowCount="6"
+        android:useDefaultMargins="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingTop="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="当前速度"
+                android:textColor="@color/black" />
+
+            <TextView
+                android:id="@+id/velocity_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="12dp"
+                android:text="0 rpm"
+                android:textColor="@color/black" />
+
+        </LinearLayout>
+
+        <ToggleButton
+            android:id="@+id/btn_velocity"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textOff="点击读取"
+            android:textOn="正在读取" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="设置速度"
+                android:textColor="@color/black" />
+
+            <EditText
+                android:id="@+id/velocity_edit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="12dp"
+                android:digits="0123456789"
+                android:text="600"
+                android:textColor="@color/black" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="rpm"
+                android:textColor="@color/black" />
+
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btn_velocity_edit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="设置" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingTop="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="加速时间"
+                android:textColor="@color/black" />
+
+            <TextView
+                android:id="@+id/acc_positive_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="12dp"
+                android:text="0 ms/Krpm"
+                android:textColor="@color/black" />
+
+        </LinearLayout>
+
+        <ToggleButton
+            android:id="@+id/btn_acc_positive"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textOff="点击读取"
+            android:textOn="正在读取" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="48dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="设置加速时间"
+                android:textColor="@color/black" />
+
+            <EditText
+                android:id="@+id/acc_positive_edit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="12dp"
+                android:digits="0123456789"
+                android:text="10"
+                android:textColor="@color/black" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ms/Krpm"
+                android:textColor="@color/black" />
+
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btn_acc_positive_edit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="设置" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingTop="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="减速时间"
+                android:textColor="@color/black" />
+
+            <TextView
+                android:id="@+id/acc_negative_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="12dp"
+                android:text="0 ms/Krpm"
+                android:textColor="@color/black" />
+
+        </LinearLayout>
+
+        <ToggleButton
+            android:id="@+id/btn_acc_negative"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textOff="点击读取"
+            android:textOn="正在读取" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="设置减速时间"
+                android:textColor="@color/black" />
+
+            <EditText
+                android:id="@+id/acc_negative_edit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="12dp"
+                android:digits="0123456789"
+                android:text="10"
+                android:textColor="@color/black" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ms/Krpm"
+                android:textColor="@color/black" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btn_acc_negative_edit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="设置" />
+
+    </GridLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="12dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=" 启停       "
+            android:textColor="@color/black" />
+
+        <ToggleButton
+            android:id="@+id/turn_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textOff="已停止"
+            android:textOn="已启动" />
+
+        <!--            <ToggleButton-->
+        <!--                android:id="@+id/turn_on_btn"-->
+        <!--                android:layout_width="wrap_content"-->
+        <!--                android:layout_height="wrap_content"-->
+        <!--                android:textOff="已关闭持续"-->
+        <!--                android:textOn="已持续启动" />-->
+    </LinearLayout>
+
+</LinearLayout>

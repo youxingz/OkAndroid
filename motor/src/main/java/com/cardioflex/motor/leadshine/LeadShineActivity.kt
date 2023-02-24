@@ -1,0 +1,81 @@
+package com.cardioflex.motor.leadshine
+
+import android.os.Bundle
+import android.serialport.SerialPortFinder
+import android.view.View
+import android.widget.AdapterView
+import android.widget.AdapterView.OnItemSelectedListener
+import android.widget.Button
+import android.widget.GridLayout
+import android.widget.Spinner
+import androidx.appcompat.app.AppCompatActivity
+import com.cardioflex.motor.DeviceListAdapter
+import com.cardioflex.motor.R
+import io.okandroid.serial.SerialDevice
+import java.io.File
+
+class LeadShineActivity : AppCompatActivity() {
+    private lateinit var adapter: DeviceListAdapter
+    private lateinit var gridLayout: GridLayout
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_lead_shine)
+        initViews()
+        // default set:
+        updateDevice(File("/dev/ttyS8")) // default device
+    }
+
+    private fun initViews() {
+        val deviceList: Spinner = findViewById(R.id.device_list)
+        val refreshBtn: Button = findViewById(R.id.refresh_device_btn)
+        gridLayout = findViewById(R.id.control_container)
+        refreshBtn.setOnClickListener {
+            refreshDeviceList()
+        }
+        adapter = DeviceListAdapter(this, R.layout.device_item)
+        deviceList.adapter = adapter
+        deviceList.onItemSelectedListener = object : OnItemSelectedListener {
+            override fun onItemSelected(
+                parent: AdapterView<*>?,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
+                val device = adapter.getDevice(position)
+                updateDevice(device)
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+                TODO("Not yet implemented")
+            }
+
+        }
+        // after all:
+        refreshDeviceList()
+    }
+
+    private fun updateDevice(deviceFile: File) {
+        try {
+            val device = SerialDevice.newBuilder(deviceFile, 115200).build()
+            gridLayout.removeAllViews()
+            for (index in IntArray(1) { it }) {
+                val pane = ControlPaneLeadShineMotor(this, device, index + 1)
+                val params = GridLayout.LayoutParams()
+                params.columnSpec = GridLayout.spec(index % 2)
+                params.rowSpec = GridLayout.spec(index / 2)
+                gridLayout.addView(pane, params)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun refreshDeviceList() {
+        adapter.clear()
+        for (devicePath in SerialPortFinder().allDevicesPath) {
+            adapter.addDevice(File(devicePath))
+        }
+        adapter.notifyDataSetChanged()
+    }
+}

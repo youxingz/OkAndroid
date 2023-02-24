@@ -9,6 +9,7 @@ import com.serotonin.modbus4j.msg.ReadHoldingRegistersRequest;
 /**
  * 雷塞电机 RS485 协议
  */
+@Deprecated
 public class LeadShine {
     private ModbusMaster modbus;
     private int slaveId;
@@ -117,15 +118,18 @@ public class LeadShine {
     }
 
     /**
-     * 当前报警
+     * 当前报警 [R]
      * 0x2203
      * 故障码 备注
-     * 0x01 过流
-     * 0x02 过压
-     * 0x40 电流采样回路故障
-     * 0x80 锁轴故障
-     * 0x200 EEPROM 故障
-     * 0x100 参数自整定故障
+     * 0x01 过流              1
+     * 0x02 过压              2
+     * 0x40 电流采样回路故障    3
+     * 0x80 锁轴故障           4
+     * 0x200 EEPROM 故障      5
+     * 0x100 参数自整定故障     6
+     * 0x020 超差报警          7
+     * 0    编码器断线检测      8
+     * 0    输入 IO 配置重复    9
      *
      * @return
      */

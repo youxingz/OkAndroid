@@ -49,8 +49,8 @@ public class SerialDevice {
         this.outputStream = serialPort.getOutputStream();
     }
 
-    public SerialPort getSerialPort() {
-        return serialPort;
+    public File getDevice() {
+        return device;
     }
 
     public InputStream getInputStream() {

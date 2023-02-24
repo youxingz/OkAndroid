@@ -1,17 +1,17 @@
-package com.cardioflex.motor
+package com.cardioflex.motor.pump
 
 import android.os.Bundle
 import android.widget.GridLayout
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.cardioflex.motor.R
 import io.okandroid.serial.SerialDevice
 
-class MainActivity : AppCompatActivity() {
-    lateinit var device: SerialDevice
+class PumpActivity : AppCompatActivity() {
+    private lateinit var device: SerialDevice
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_pump)
         title = "蠕动泵控制"
         init_modbus()
     }
@@ -24,7 +24,7 @@ class MainActivity : AppCompatActivity() {
         }
         val gridLayout: GridLayout = findViewById(R.id.control_container)
         for (index in IntArray(4) { it }) {
-            val pane = ControlPane(this, device, index + 1)
+            val pane = ControlPanePump(this, device, index + 1)
             val params = GridLayout.LayoutParams()
             params.columnSpec = GridLayout.spec(index % 2)
             params.rowSpec = GridLayout.spec(index / 2)
