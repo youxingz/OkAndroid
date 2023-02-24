@@ -18,11 +18,10 @@ import io.reactivex.rxjava3.schedulers.Schedulers
 
 
 class ControlPaneLeadShineMotor(
-    context: Context,
+    private val context: LeadShineActivity,
     private val device: SerialDevice,
     private val slaveId: Int
-) :
-    LinearLayout(context) {
+) : LinearLayout(context) {
 
     private lateinit var motor: LeadShinePr0Observable
     private lateinit var titleText: TextView
@@ -64,6 +63,12 @@ class ControlPaneLeadShineMotor(
             val modbusMaster = modbus.master()
             modbusMaster.retries = 0
             motor = LeadShinePr0Observable(LeadShinePr0(modbusMaster, slaveId))
+            motor.setModeToVelocity().subscribeOn(Schedulers.io()).observeOn(OkAndroid.mainThread())
+                .subscribe({}, { e ->
+                    e.printStackTrace()
+                    e.localizedMessage?.let { context.appendLog(it) }
+                    Snackbar.make(this, "【电机 $slaveId 号】速度模式设置失败", 0).show()
+                })
         } catch (e: ModbusTransportException) {
             e.printStackTrace()
         }
@@ -103,13 +108,12 @@ class ControlPaneLeadShineMotor(
                 motor.turn(isChecked).subscribeOn(Schedulers.io()).observeOn(OkAndroid.mainThread())
                     .subscribe({
                         Snackbar.make(
-                            this,
-                            "【电机 $slaveId 号】${if (isChecked) "启动" else "急停"}成功",
-                            1
+                            this, "【电机 $slaveId 号】${if (isChecked) "启动" else "急停"}成功", 0
                         ).show()
-                    }, {
-                        it.printStackTrace()
-                        Snackbar.make(this, "【电机 $slaveId 号】${if (isChecked) "启动" else "急停"}失败", 1)
+                    }, { e ->
+                        e.printStackTrace()
+                        e.localizedMessage?.let { context.appendLog(it) }
+                        Snackbar.make(this, "【电机 $slaveId 号】${if (isChecked) "启动" else "急停"}失败", 0)
                             .show()
                     })
             }
@@ -124,8 +128,9 @@ class ControlPaneLeadShineMotor(
                 disposableVelocity = motor.velocity().subscribeOn(Schedulers.newThread())
                     .observeOn(OkAndroid.mainThread()).subscribe({
                         velocityText.text = "$it RPM"
-                    }, {
-                        it.printStackTrace()
+                    }, { e ->
+                        e.printStackTrace()
+                        e.localizedMessage?.let { context.appendLog(it) }
                         Snackbar.make(this, "【电机 $slaveId 号】速度读取失败，请重试", 0).show()
                         velocityToggle.isChecked = false
                     })
@@ -141,8 +146,9 @@ class ControlPaneLeadShineMotor(
             motor.velocity(speed).subscribeOn(Schedulers.io()).observeOn(OkAndroid.mainThread())
                 .subscribe({
                     Snackbar.make(v, "【电机 $slaveId 号】速度设置成功 [$speed] rpm", 0).show();
-                }, {
-                    it.printStackTrace()
+                }, { e ->
+                    e.printStackTrace()
+                    e.localizedMessage?.let { context.appendLog(it) }
                     Snackbar.make(this, "【电机 $slaveId 号】速度设置失败", 0).show()
                 })
         }
@@ -156,8 +162,9 @@ class ControlPaneLeadShineMotor(
                     motor.accelerationTime(true).subscribeOn(Schedulers.newThread())
                         .observeOn(OkAndroid.mainThread()).subscribe({
                             accPositiveText.text = "$it ms/Krpm"
-                        }, {
-                            it.printStackTrace()
+                        }, { e ->
+                            e.printStackTrace()
+                            e.localizedMessage?.let { context.appendLog(it) }
                             Snackbar.make(this, "【电机 $slaveId 号】加速时间读取失败，请重试", 0).show()
                             accPositiveToggle.isChecked = false
                         })
@@ -171,11 +178,11 @@ class ControlPaneLeadShineMotor(
             val text = accPositiveEdit.text.toString()
             val time = Integer.parseInt(text)
             motor.accelerationTime(true, time).subscribeOn(Schedulers.io())
-                .observeOn(OkAndroid.mainThread())
-                .subscribe({
+                .observeOn(OkAndroid.mainThread()).subscribe({
                     Snackbar.make(v, "【电机 $slaveId 号】加速时间设置成功 [$speed] ms/Krpm", 0).show();
-                }, {
-                    it.printStackTrace()
+                }, { e ->
+                    e.printStackTrace()
+                    e.localizedMessage?.let { context.appendLog(it) }
                     Snackbar.make(this, "【电机 $slaveId 号】加速时间设置失败", 0).show()
                 })
         }
@@ -190,8 +197,9 @@ class ControlPaneLeadShineMotor(
                     motor.accelerationTime(false).subscribeOn(Schedulers.newThread())
                         .observeOn(OkAndroid.mainThread()).subscribe({
                             accNegativeText.text = "$it ms/Krpm"
-                        }, {
-                            it.printStackTrace()
+                        }, { e ->
+                            e.printStackTrace()
+                            e.localizedMessage?.let { context.appendLog(it) }
                             Snackbar.make(this, "【电机 $slaveId 号】减速时间读取失败，请重试", 0).show()
                             accNegativeToggle.isChecked = false
                         })
@@ -205,11 +213,11 @@ class ControlPaneLeadShineMotor(
             val text = accNegativeEdit.text.toString()
             val time = Integer.parseInt(text)
             motor.accelerationTime(false, time).subscribeOn(Schedulers.io())
-                .observeOn(OkAndroid.mainThread())
-                .subscribe({
+                .observeOn(OkAndroid.mainThread()).subscribe({
                     Snackbar.make(v, "【电机 $slaveId 号】减速时间设置成功 [$speed] ms/Krpm", 0).show();
-                }, {
-                    it.printStackTrace()
+                }, { e ->
+                    e.printStackTrace()
+                    e.localizedMessage?.let { context.appendLog(it) }
                     Snackbar.make(this, "【电机 $slaveId 号】减速时间设置失败", 0).show()
                 })
         }

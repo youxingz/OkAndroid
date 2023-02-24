@@ -3,11 +3,8 @@ package com.cardioflex.motor.leadshine
 import android.os.Bundle
 import android.serialport.SerialPortFinder
 import android.view.View
-import android.widget.AdapterView
+import android.widget.*
 import android.widget.AdapterView.OnItemSelectedListener
-import android.widget.Button
-import android.widget.GridLayout
-import android.widget.Spinner
 import androidx.appcompat.app.AppCompatActivity
 import com.cardioflex.motor.DeviceListAdapter
 import com.cardioflex.motor.R
@@ -17,6 +14,7 @@ import java.io.File
 class LeadShineActivity : AppCompatActivity() {
     private lateinit var adapter: DeviceListAdapter
     private lateinit var gridLayout: GridLayout
+    private lateinit var logText: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,6 +28,7 @@ class LeadShineActivity : AppCompatActivity() {
         val deviceList: Spinner = findViewById(R.id.device_list)
         val refreshBtn: Button = findViewById(R.id.refresh_device_btn)
         gridLayout = findViewById(R.id.control_container)
+        logText = findViewById(R.id.log_text)
         refreshBtn.setOnClickListener {
             refreshDeviceList()
         }
@@ -68,6 +67,7 @@ class LeadShineActivity : AppCompatActivity() {
             }
         } catch (e: Exception) {
             e.printStackTrace()
+            e.localizedMessage?.let { appendLog(it) }
         }
     }
 
@@ -77,5 +77,10 @@ class LeadShineActivity : AppCompatActivity() {
             adapter.addDevice(File(devicePath))
         }
         adapter.notifyDataSetChanged()
+    }
+
+    fun appendLog(text: String) {
+        val log = "${System.currentTimeMillis()}\t$text\n"
+        logText.text = logText.text.toString() + log
     }
 }

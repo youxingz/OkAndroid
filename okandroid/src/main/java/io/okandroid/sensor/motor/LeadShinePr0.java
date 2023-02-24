@@ -42,6 +42,7 @@ public class LeadShinePr0 {
         WriteRegisterResponse response = (WriteRegisterResponse) modbus.send(request);
         if (response.isException()) {
             // error.
+            throw new ModbusTransportException("Exception Code: " + response.getExceptionCode() + ", Msg:" + response.getExceptionMessage());
         }
     }
 
@@ -55,6 +56,7 @@ public class LeadShinePr0 {
         WriteRegisterResponse response = (WriteRegisterResponse) modbus.send(new WriteRegisterRequest(slaveId, 0x6203, velocity));
         if (response.isException()) {
             // error.
+            throw new ModbusTransportException("Exception Code: " + response.getExceptionCode() + ", Msg:" + response.getExceptionMessage());
         }
     }
 
@@ -67,8 +69,8 @@ public class LeadShinePr0 {
     public int velocity() throws ModbusTransportException {
         ReadHoldingRegistersResponse response = (ReadHoldingRegistersResponse) modbus.send(new ReadHoldingRegistersRequest(slaveId, 0x6203, 2));
         if (response.isException()) {
-            // error
-            return -1;
+            // error.
+            throw new ModbusTransportException("Exception Code: " + response.getExceptionCode() + ", Msg:" + response.getExceptionMessage());
         }
         byte[] data = response.getData();
         return ModbusUtils.toShort(data[0], data[1]);
@@ -84,6 +86,7 @@ public class LeadShinePr0 {
         WriteRegisterResponse response = (WriteRegisterResponse) modbus.send(new WriteRegisterRequest(slaveId, 0x6202, turnOn ? 0x10 : 0x40));
         if (response.isException()) {
             // error.
+            throw new ModbusTransportException("Exception Code: " + response.getExceptionCode() + ", Msg:" + response.getExceptionMessage());
         }
     }
 
@@ -97,6 +100,7 @@ public class LeadShinePr0 {
         WriteRegisterResponse response = (WriteRegisterResponse) modbus.send(new WriteRegisterRequest(slaveId, positive ? 0x6204 : 0x6205, time));
         if (response.isException()) {
             // error.
+            throw new ModbusTransportException("Exception Code: " + response.getExceptionCode() + ", Msg:" + response.getExceptionMessage());
         }
     }
 
@@ -109,8 +113,8 @@ public class LeadShinePr0 {
     public int accelerationTime(boolean positive) throws ModbusTransportException {
         ReadHoldingRegistersResponse response = (ReadHoldingRegistersResponse) modbus.send(new ReadHoldingRegistersRequest(slaveId, positive ? 0x6204 : 0x6205, 2));
         if (response.isException()) {
-            // error
-            return -1;
+            // error.
+            throw new ModbusTransportException("Exception Code: " + response.getExceptionCode() + ", Msg:" + response.getExceptionMessage());
         }
         byte[] data = response.getData();
         return ModbusUtils.toShort(data[0], data[1]);
