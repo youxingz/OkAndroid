@@ -2,6 +2,8 @@ package io.okandroid.js;
 
 import android.webkit.WebView;
 
+import com.google.gson.JsonSyntaxException;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,9 +35,13 @@ public class OkWebView {
             OkAndroid.mainThread().createWorker().schedule(() -> {
                 try {
                     webView.evaluateJavascript(jsCode, returnValue -> {
-                        // parse
-                        EventResponse response = GsonUtils.getInstance().fromJson(returnValue, EventResponse.class);
-                        emitter.onSuccess(response);
+                        try {
+                            // parse
+                            EventResponse response = GsonUtils.getInstance().fromJson(returnValue, EventResponse.class);
+                            emitter.onSuccess(response);
+                        } catch (JsonSyntaxException e) {
+                            emitter.onError(e);
+                        }
                     });
                 } catch (Exception e) {
                     emitter.onError(e);

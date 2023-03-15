@@ -18,3 +18,4 @@ rootProject.name = "OkAndroid"
 include ':okandroid'
 //include ':sample'
 include ':motor'
+include ':nordicble'

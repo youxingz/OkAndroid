@@ -15,6 +15,7 @@ import android.bluetooth.le.ScanResult;
 import android.content.Context;
 import android.os.Build;
 
+import java.util.Hashtable;
 import java.util.List;
 import java.util.UUID;
 
@@ -34,17 +35,17 @@ public class OkBleClient {
     private BluetoothGatt mBluetoothGatt;
 
     private BluetoothGattCallback gattCallback;
-    private ScanResult deviceScanResult;
+    private String macAddress;
 
     // emitters
     private ObservableEmitter<ConnectionStatus> connectionEmitter;
-    private ObservableEmitter<OkBleCharacteristic> readCharacteristicEmitter;
-    private ObservableEmitter<BluetoothGattCharacteristic> writeCharacteristicEmitter;
+    private Hashtable<BluetoothGattCharacteristic, ObservableEmitter<OkBleCharacteristic>> readCharacteristicEmitterMap = new Hashtable<>();
+    private SingleEmitter<BluetoothGattCharacteristic> writeCharacteristicEmitter;
     private ObservableEmitter<OkBleDescriptor> readDescriptorEmitter;
     private ObservableEmitter<BluetoothGattDescriptor> writeDescriptorEmitter;
     private ObservableEmitter<List<BluetoothGattService>> serviceDiscoverEmitter;
     private ObservableEmitter<List<BluetoothGattService>> serviceChangeEmitter;
-    private ObservableEmitter<OkBleCharacteristic> characteristicChangeEmitter;
+    private Hashtable<BluetoothGattCharacteristic, ObservableEmitter<OkBleCharacteristic>> characteristicChangeEmitterMap = new Hashtable<>();
     private SingleEmitter<Integer> readMtuEmitter;
     private SingleEmitter<Integer> readRssiEmitter;
 
@@ -52,9 +53,15 @@ public class OkBleClient {
         connecting, connected, disconnected, disconnecting,
     }
 
-    public OkBleClient(Context context, ScanResult deviceScanResult) {
+    private static ConnectionStatus connectionStatus = ConnectionStatus.disconnected;
+
+    public OkBleClient(Context context, String macAddress) {
         this.context = context;
-        this.deviceScanResult = deviceScanResult;
+        this.macAddress = macAddress;
+    }
+
+    public OkBleClient(Context context, ScanResult deviceScanResult) {
+        this(context, deviceScanResult.getDevice().getAddress());
     }
 
     private boolean connection_initialize(@NonNull ObservableEmitter<ConnectionStatus> emitter) {
@@ -99,15 +106,19 @@ public class OkBleClient {
                 if (connectionEmitter != null && !connectionEmitter.isDisposed()) {
                     switch (newState) {
                         case BluetoothProfile.STATE_CONNECTED:
+                            connectionStatus = ConnectionStatus.connected;
                             connectionEmitter.onNext(ConnectionStatus.connected);
                             break;
                         case BluetoothProfile.STATE_CONNECTING:
+                            connectionStatus = ConnectionStatus.connecting;
                             connectionEmitter.onNext(ConnectionStatus.connecting);
                             break;
                         case BluetoothProfile.STATE_DISCONNECTED:
+                            connectionStatus = ConnectionStatus.disconnected;
                             connectionEmitter.onNext(ConnectionStatus.disconnected);
                             break;
                         case BluetoothProfile.STATE_DISCONNECTING:
+                            connectionStatus = ConnectionStatus.disconnecting;
                             connectionEmitter.onNext(ConnectionStatus.disconnecting);
                             break;
                     }
@@ -127,8 +138,9 @@ public class OkBleClient {
             public void onCharacteristicRead(@androidx.annotation.NonNull BluetoothGatt gatt, @androidx.annotation.NonNull BluetoothGattCharacteristic characteristic, @androidx.annotation.NonNull byte[] value, int status) {
                 super.onCharacteristicRead(gatt, characteristic, value, status);
                 if (status != BluetoothGatt.GATT_SUCCESS) return;
-                if (readCharacteristicEmitter != null && !readCharacteristicEmitter.isDisposed()) {
-                    readCharacteristicEmitter.onNext(new OkBleCharacteristic(characteristic, value, System.currentTimeMillis()));
+                ObservableEmitter<OkBleCharacteristic> emitter = readCharacteristicEmitterMap.get(characteristic);
+                if (emitter != null && !emitter.isDisposed()) {
+                    emitter.onNext(new OkBleCharacteristic(characteristic, value, System.currentTimeMillis()));
                 }
             }
 
@@ -137,7 +149,7 @@ public class OkBleClient {
                 super.onCharacteristicWrite(gatt, characteristic, status);
                 if (status != BluetoothGatt.GATT_SUCCESS) return;
                 if (writeCharacteristicEmitter != null && !writeCharacteristicEmitter.isDisposed()) {
-                    writeCharacteristicEmitter.onNext(characteristic);
+                    writeCharacteristicEmitter.onSuccess(characteristic);
                 }
             }
 
@@ -146,15 +158,23 @@ public class OkBleClient {
                 super.onReliableWriteCompleted(gatt, status);
                 if (status != BluetoothGatt.GATT_SUCCESS) return;
                 if (writeCharacteristicEmitter != null && !writeCharacteristicEmitter.isDisposed()) {
-                    writeCharacteristicEmitter.onComplete();
+                    // writeCharacteristicEmitter.onComplete(); // TODO!
                 }
             }
 
+            /**
+             * notify
+             * @param gatt
+             * @param characteristic
+             * @param value
+             */
             @Override
             public void onCharacteristicChanged(@androidx.annotation.NonNull BluetoothGatt gatt, @androidx.annotation.NonNull BluetoothGattCharacteristic characteristic, @androidx.annotation.NonNull byte[] value) {
                 super.onCharacteristicChanged(gatt, characteristic, value);
-                if (characteristicChangeEmitter != null && !characteristicChangeEmitter.isDisposed()) {
-                    characteristicChangeEmitter.onNext(new OkBleCharacteristic(characteristic, value, System.currentTimeMillis()));
+                // find target
+                ObservableEmitter<OkBleCharacteristic> emitter = characteristicChangeEmitterMap.get(characteristic);
+                if (emitter != null && !emitter.isDisposed()) {
+                    emitter.onNext(new OkBleCharacteristic(characteristic, value, System.currentTimeMillis()));
                 }
             }
 
@@ -212,7 +232,7 @@ public class OkBleClient {
         return Observable.create(emitter -> {
             connectionEmitter = emitter;
             if (!connection_initialize(emitter)) return;
-            String address = deviceScanResult.getDevice().getAddress();
+            String address = macAddress;
             if (mBluetoothAdapter == null || address == null) {
                 emitter.onError(new OkBluetoothException("BluetoothAdapter not initialized or unspecified address."));
                 return;
@@ -220,6 +240,7 @@ public class OkBleClient {
 
             if (mBluetoothGatt != null) {
                 if (mBluetoothGatt.connect()) {
+                    connectionStatus = ConnectionStatus.connecting;
                     emitter.onNext(ConnectionStatus.connecting);
                 }
             }
@@ -234,8 +255,13 @@ public class OkBleClient {
                 return;
             }
             mBluetoothGatt = device.connectGatt(context, autoConnect, gattCallback);
+            connectionStatus = ConnectionStatus.connecting;
             emitter.onNext(ConnectionStatus.connecting);
         });
+    }
+
+    public boolean isConnected() {
+        return connectionStatus == ConnectionStatus.connected;
     }
 
     @SuppressLint("MissingPermission")
@@ -263,10 +289,10 @@ public class OkBleClient {
         BluetoothGattService service = mBluetoothGatt.getService(serviceUuid);
         if (service == null)
             throw new IllegalArgumentException("Unknown Service UUID: " + serviceUuid);
-        BluetoothGattCharacteristic characteristic = service.getCharacteristic(characteristicUuid);
-        if (characteristic == null)
-            throw new IllegalArgumentException("Unknown Characteristic UUID: " + characteristicUuid);
-        return characteristic;
+        // BluetoothGattCharacteristic characteristic = service.getCharacteristic(characteristicUuid);
+        // if (characteristic == null)
+        //     throw new IllegalArgumentException("Unknown Characteristic UUID: " + characteristicUuid);
+        return service.getCharacteristic(characteristicUuid);
     }
 
     @SuppressLint("MissingPermission")
@@ -290,8 +316,8 @@ public class OkBleClient {
 
     // @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
     @SuppressLint("MissingPermission")
-    public Observable<BluetoothGattCharacteristic> writeCharacteristic(BluetoothGattCharacteristic characteristic, byte[] data, int writeType) {
-        return Observable.create(emitter -> {
+    public Single<BluetoothGattCharacteristic> writeCharacteristic(BluetoothGattCharacteristic characteristic, byte[] data, int writeType) {
+        return Single.create(emitter -> {
             if (!validGatt(emitter)) return;
             int code = -1;
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
@@ -313,8 +339,8 @@ public class OkBleClient {
     public Observable<OkBleCharacteristic> readCharacteristic(BluetoothGattCharacteristic characteristic) {
         return Observable.create(emitter -> {
             if (!validGatt(emitter)) return;
+            readCharacteristicEmitterMap.put(characteristic, emitter);
             mBluetoothGatt.readCharacteristic(characteristic);
-            readCharacteristicEmitter = emitter;
         });
     }
 
@@ -341,9 +367,9 @@ public class OkBleClient {
         });
     }
 
-    public Observable<OkBleCharacteristic> observeCharacteristicChanging() {
+    public Observable<OkBleCharacteristic> observeNotification(BluetoothGattCharacteristic characteristic) {
         return Observable.create(emitter -> {
-            characteristicChangeEmitter = emitter;
+            characteristicChangeEmitterMap.put(characteristic, emitter);
         });
     }
 

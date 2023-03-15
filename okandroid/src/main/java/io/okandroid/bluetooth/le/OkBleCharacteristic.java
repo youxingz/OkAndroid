@@ -12,4 +12,16 @@ public class OkBleCharacteristic {
         this.data = data;
         this.timestamp = timestamp;
     }
+
+    public BluetoothGattCharacteristic getCharacteristic() {
+        return characteristic;
+    }
+
+    public byte[] getData() {
+        return data;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
 }

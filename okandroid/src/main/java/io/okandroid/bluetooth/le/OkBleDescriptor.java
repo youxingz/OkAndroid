@@ -12,4 +12,16 @@ public class OkBleDescriptor {
         this.data = data;
         this.timestamp = timestamp;
     }
+
+    public BluetoothGattDescriptor getDescriptor() {
+        return descriptor;
+    }
+
+    public byte[] getData() {
+        return data;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
 }
