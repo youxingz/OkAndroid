@@ -19,6 +19,7 @@ class LeadFluidActivityX : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_lead_fluid)
+        title = "雷弗蠕动泵控制面板（BT/01S）"
         initViews()
         // default set:
         updateDevice(File("/dev/ttyS8")) // default device
@@ -73,11 +74,11 @@ class LeadFluidActivityX : AppCompatActivity() {
             params1.rowSpec = GridLayout.spec(0)
             gridLayout.addView(pane1, params1)
             // 2.
-            val pane = ControlPaneLeadFluidPump(this, device, 1)
-            val params = GridLayout.LayoutParams()
-            params.columnSpec = GridLayout.spec(0)
-            params.rowSpec = GridLayout.spec(1)
-            gridLayout.addView(pane, params)
+//            val pane = ControlPaneLeadFluidPump(this, device, 1)
+//            val params = GridLayout.LayoutParams()
+//            params.columnSpec = GridLayout.spec(0)
+//            params.rowSpec = GridLayout.spec(1)
+//            gridLayout.addView(pane, params)
         } catch (e: Exception) {
             e.printStackTrace()
             e.localizedMessage?.let { appendLog(it) }

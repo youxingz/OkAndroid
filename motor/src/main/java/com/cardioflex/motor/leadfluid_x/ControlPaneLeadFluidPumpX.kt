@@ -149,7 +149,7 @@ class ControlPaneLeadFluidPumpX(
                     })
                 disposableDirection = motor.direction().subscribeOn(Schedulers.newThread())
                     .observeOn(OkAndroid.mainThread()).subscribe({
-                        directionText.text = if (it == 1) "顺时针↩️" else "逆时针↪️"
+                        directionText.text = if (it == 0) "顺时针↩️" else "逆时针↪️"
                     }, { e ->
                         e.printStackTrace()
                         e.localizedMessage?.let { context.appendLog(it) }
@@ -167,7 +167,7 @@ class ControlPaneLeadFluidPumpX(
         }
         // clear
         clearToggle.setOnCheckedChangeListener { _, isChecked ->
-            val direction = if (clearDirectionToggle.isChecked) 1 else 0
+            val direction = if (clearDirectionToggle.isChecked) 0 else 1
             setPeriodItem(200, direction)
             motor.turn(isChecked).subscribeOn(Schedulers.io()).observeOn(OkAndroid.mainThread())
                 .subscribe({
@@ -182,7 +182,7 @@ class ControlPaneLeadFluidPumpX(
                 })
         }
         clearDirectionToggle.setOnCheckedChangeListener { _, isChecked ->
-            val direction = if (isChecked) 1 else 0
+            val direction = if (isChecked) 0 else 1
             setPeriodItem(200, direction)
         }
     }
@@ -193,10 +193,10 @@ class ControlPaneLeadFluidPumpX(
             var success: Boolean
             val speed1 = parseInt(velocityEdit1.text.toString())
             val time1 = parseInt(timeEdit1.text.toString())
-            val direction1 = if (directionToggle1.isChecked) 1 else 0
+            val direction1 = if (directionToggle1.isChecked) 0 else 1
             val speed2 = parseInt(velocityEdit2.text.toString())
             val time2 = parseInt(timeEdit2.text.toString())
-            val direction2 = if (directionToggle2.isChecked) 1 else 0
+            val direction2 = if (directionToggle2.isChecked) 0 else 1
 
             Log.i("WORKING", "working1...: $speed1 rpm, $time1 ms")
             success = setPeriodItem(speed1, direction1)
@@ -213,7 +213,7 @@ class ControlPaneLeadFluidPumpX(
         }
     }
 
-    // - direction: 0: 逆, 1: 顺
+    // - direction: 1: 逆, 0: 顺
     @SuppressLint("CheckResult")
     private fun setPeriodItem(speed: Int, direction: Int): Boolean {
         motor.direction(direction).subscribeOn(Schedulers.io())
@@ -222,7 +222,7 @@ class ControlPaneLeadFluidPumpX(
 //                it.printStackTrace()
                 working = false
             })
-        if (!working) return false
+//        if (!working) return false
         motor.velocity(speed * 10).subscribeOn(Schedulers.io())
             .observeOn(OkAndroid.mainThread())
             .subscribe({
