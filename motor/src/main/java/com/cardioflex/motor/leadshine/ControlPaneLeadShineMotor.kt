@@ -61,7 +61,7 @@ class ControlPaneLeadShineMotor(
         try {
             val modbus = Modbus(device)
             val modbusMaster = modbus.master()
-            modbusMaster.retries = 0
+            modbusMaster.retries = 3
             motor = LeadShinePr0Observable(LeadShinePr0(modbusMaster, slaveId))
             motor.setModeToVelocity().subscribeOn(Schedulers.io()).observeOn(OkAndroid.mainThread())
                 .subscribe({}, { e ->

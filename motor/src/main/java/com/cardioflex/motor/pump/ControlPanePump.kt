@@ -49,7 +49,7 @@ class ControlPanePump(
         try {
             val modbus = Modbus(device)
             val modbusMaster = modbus.master()
-            modbusMaster.retries = 0
+            modbusMaster.retries = 3
             pump = JieHengPeristalticPumpObservable(JieHengPeristalticPump(modbusMaster, slaveId))
         } catch (e: ModbusTransportException) {
             e.printStackTrace()

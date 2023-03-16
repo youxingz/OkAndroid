@@ -52,7 +52,7 @@ class ControlPaneLeadFluidPump(
         try {
             val modbus = Modbus(device)
             val modbusMaster = modbus.master()
-            modbusMaster.retries = 3
+            modbusMaster.retries = 5
             motor = LeadFluidPumpObservable(LeadFluidPump(modbusMaster, slaveId))
         } catch (e: ModbusTransportException) {
             e.printStackTrace()

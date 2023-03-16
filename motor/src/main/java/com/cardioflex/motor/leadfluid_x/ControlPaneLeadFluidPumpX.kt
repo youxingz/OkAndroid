@@ -43,6 +43,10 @@ class ControlPaneLeadFluidPumpX(
     private lateinit var timeEdit2: EditText
     private lateinit var directionToggle2: ToggleButton
 
+    // clear
+    private lateinit var clearDirectionToggle: ToggleButton
+    private lateinit var clearToggle: ToggleButton
+
     private lateinit var root: View
 
     private var disposableVelocity: Disposable? = null
@@ -62,7 +66,7 @@ class ControlPaneLeadFluidPumpX(
         try {
             val modbus = Modbus(device)
             modbusMaster = modbus.master()
-            modbusMaster.retries = 0
+            modbusMaster.retries = 5
             motor = LeadFluidPumpObservable(LeadFluidPump(modbusMaster, slaveId))
         } catch (e: ModbusTransportException) {
 //            e.printStackTrace()
@@ -86,6 +90,9 @@ class ControlPaneLeadFluidPumpX(
         velocityEdit2 = root.findViewById(R.id.velocity_edit2)
         timeEdit2 = root.findViewById(R.id.time_edit2)
         directionToggle2 = root.findViewById(R.id.direction_btn2)
+        // clear
+        clearDirectionToggle = root.findViewById(R.id.direction_btn_clear)
+        clearToggle = root.findViewById(R.id.clear_btn)
 
         val filename = device.device.name
         titleText.text = "蠕动泵【${slaveId}号 | 串口：$filename】"
@@ -157,6 +164,26 @@ class ControlPaneLeadFluidPumpX(
                     disposableDirection!!.dispose()
                 }
             }
+        }
+        // clear
+        clearToggle.setOnCheckedChangeListener { _, isChecked ->
+            val direction = if (clearDirectionToggle.isChecked) 1 else 0
+            setPeriodItem(200, direction)
+            motor.turn(isChecked).subscribeOn(Schedulers.io()).observeOn(OkAndroid.mainThread())
+                .subscribe({
+                    Snackbar.make(
+                        this, "【蠕动泵 $slaveId 号】高速${if (isChecked) "启动" else "急停"}成功", 0
+                    ).show()
+                }, { e ->
+                    e.printStackTrace()
+                    e.localizedMessage?.let { context.appendLog(it) }
+                    Snackbar.make(this, "【蠕动泵 $slaveId 号】高速${if (isChecked) "启动" else "急停"}失败", 0)
+                        .show()
+                })
+        }
+        clearDirectionToggle.setOnCheckedChangeListener { _, isChecked ->
+            val direction = if (isChecked) 1 else 0
+            setPeriodItem(200, direction)
         }
     }
 
