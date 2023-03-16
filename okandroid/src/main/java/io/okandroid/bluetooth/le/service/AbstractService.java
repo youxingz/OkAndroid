@@ -1,6 +1,8 @@
 package io.okandroid.bluetooth.le.service;
 
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
+import android.util.Log;
 
 import java.util.Hashtable;
 import java.util.UUID;
@@ -34,12 +36,12 @@ public abstract class AbstractService {
                 emitter.onError(new OkBluetoothException("BLE device is not connected."));
                 return;
             }
-            BluetoothGattCharacteristic characteristicSystemID = client.getCharacteristic(serviceUUID, characteristicUUID);
-            if (characteristicSystemID == null) {
+            BluetoothGattCharacteristic characteristic_ = client.getCharacteristic(serviceUUID, characteristicUUID);
+            if (characteristic_ == null) {
                 emitter.onError(new OkBluetoothException(String.format("BLE device not support: [READ] %s / %s", serviceName, characteristicUUID)));
                 return;
             }
-            Disposable thisDispose = client.writeCharacteristic(characteristicSystemID, data, writeType).observeOn(OkAndroid.mainThread()).subscribeOn(Schedulers.io()).subscribe(characteristic -> {
+            Disposable thisDispose = client.writeCharacteristic(characteristic_, data, writeType).observeOn(OkAndroid.mainThread()).subscribeOn(Schedulers.io()).subscribe(characteristic -> {
                 if (characteristic == null) return;
                 if (emitter != null && !emitter.isDisposed()) {
                     emitter.onSuccess(characteristicValueTaker.takeValue(characteristic)); // hex byte array.
@@ -60,12 +62,12 @@ public abstract class AbstractService {
                 emitter.onError(new OkBluetoothException("BLE device is not connected."));
                 return;
             }
-            BluetoothGattCharacteristic characteristicSystemID = client.getCharacteristic(serviceUUID, characteristicUUID);
-            if (characteristicSystemID == null) {
+            BluetoothGattCharacteristic characteristic_ = client.getCharacteristic(serviceUUID, characteristicUUID);
+            if (characteristic_ == null) {
                 emitter.onError(new OkBluetoothException(String.format("BLE device not support: [READ] %s / %s", serviceName, characteristicUUID)));
                 return;
             }
-            Disposable thisDispose = client.readCharacteristic(characteristicSystemID).observeOn(OkAndroid.mainThread()).subscribeOn(Schedulers.io()).subscribe(okBleCharacteristic -> {
+            Disposable thisDispose = client.readCharacteristic(characteristic_).observeOn(OkAndroid.mainThread()).subscribeOn(Schedulers.io()).subscribe(okBleCharacteristic -> {
                 BluetoothGattCharacteristic characteristic = okBleCharacteristic.getCharacteristic();
                 if (characteristic == null) return;
                 if (emitter != null && !emitter.isDisposed()) {
@@ -87,12 +89,12 @@ public abstract class AbstractService {
                 emitter.onError(new OkBluetoothException("BLE device is not connected."));
                 return;
             }
-            BluetoothGattCharacteristic characteristicSystemID = client.getCharacteristic(serviceUUID, characteristicUUID);
-            if (characteristicSystemID == null) {
+            BluetoothGattCharacteristic characteristic = client.getCharacteristic(serviceUUID, characteristicUUID);
+            if (characteristic == null) {
                 emitter.onError(new OkBluetoothException(String.format("BLE device not support: [READ] %s / %s", serviceName, characteristicUUID)));
                 return;
             }
-            client.readCharacteristic(characteristicSystemID).observeOn(OkAndroid.mainThread()).subscribeOn(Schedulers.io()).subscribe(new Observer<OkBleCharacteristic>() {
+            client.readCharacteristic(characteristic).observeOn(OkAndroid.mainThread()).subscribeOn(Schedulers.io()).subscribe(new Observer<OkBleCharacteristic>() {
                 @Override
                 public void onSubscribe(@NonNull Disposable d) {
 
@@ -125,18 +127,24 @@ public abstract class AbstractService {
     }
 
 
-    protected <T> Observable<T> observeNotification(UUID serviceUUID, UUID characteristicUUID, CharacteristicValueTaker<T> characteristicValueTaker) {
+    protected <T> Observable<T> observeNotification(UUID serviceUUID, UUID characteristicUUID, UUID descriptorUUID, CharacteristicValueTaker<T> characteristicValueTaker) {
         return Observable.create(emitter -> {
             if (!client.isConnected()) {
                 emitter.onError(new OkBluetoothException("BLE device is not connected."));
                 return;
             }
-            BluetoothGattCharacteristic characteristicSystemID = client.getCharacteristic(serviceUUID, characteristicUUID);
-            if (characteristicSystemID == null) {
+            BluetoothGattCharacteristic characteristic = client.getCharacteristic(serviceUUID, characteristicUUID);
+            if (characteristic == null) {
                 emitter.onError(new OkBluetoothException(String.format("BLE device not support: [NOTIFY] %s / %s", serviceName, characteristicUUID)));
                 return;
             }
-            client.observeNotification(characteristicSystemID).observeOn(OkAndroid.mainThread()).subscribeOn(Schedulers.io()).subscribe(new Observer<OkBleCharacteristic>() {
+            BluetoothGattDescriptor descriptor = characteristic.getDescriptor(descriptorUUID);
+            if (descriptor == null) {
+                emitter.onError(new OkBluetoothException(String.format("BLE device not support: [NOTIFY] %s / %s / %s", serviceName, characteristicUUID, descriptorUUID)));
+                return;
+            }
+            client.enableNotification(characteristic, descriptorUUID, true);
+            client.observeNotification(descriptor).observeOn(OkAndroid.mainThread()).subscribeOn(Schedulers.io()).subscribe(new Observer<OkBleCharacteristic>() {
                 @Override
                 public void onSubscribe(@NonNull Disposable d) {
 

@@ -37,15 +37,15 @@ public class OkBleScanner {
         this.adapter = BluetoothAdapter.getDefaultAdapter();
     }
 
-    public Observable<OkBleClient> scan() {
+    public Observable<ScanResult> scan() {
         return scan(new ScanSettings.Builder().build(), new ArrayList<>());
     }
 
-    public Observable<OkBleClient> scan(ScanSettings settings, List<ScanFilter> filters) {
-        return Observable.create(new ObservableOnSubscribe<OkBleClient>() {
+    public Observable<ScanResult> scan(ScanSettings settings, List<ScanFilter> filters) {
+        return Observable.create(new ObservableOnSubscribe<ScanResult>() {
             @SuppressLint("MissingPermission")
             @Override
-            public void subscribe(@NonNull ObservableEmitter<OkBleClient> emitter) {
+            public void subscribe(@NonNull ObservableEmitter<ScanResult> emitter) {
                 // if 5sec stuck, emitter.onComplete!
                 final long[] lastFoundDeviceAt = {System.currentTimeMillis()};
                 new Timer().schedule(new TimerTask() {
@@ -64,7 +64,8 @@ public class OkBleScanner {
                     public void onScanResult(int callbackType, ScanResult result) {
                         super.onScanResult(callbackType, result);
                         if (emitter.isDisposed()) return;
-                        emitter.onNext(new OkBleClient(context, result));
+                        // result.getScanRecord().getServiceUuids();
+                        emitter.onNext(result);
                         lastFoundDeviceAt[0] = System.currentTimeMillis();
                     }
 
@@ -82,6 +83,26 @@ public class OkBleScanner {
                         emitter.onError(new OkBluetoothException.ErrorCodeException(errorCode));
                     }
                 });
+            }
+        });
+    }
+
+    @SuppressLint("MissingPermission")
+    public void stopScan() {
+        adapter.getBluetoothLeScanner().stopScan(new ScanCallback() {
+            @Override
+            public void onScanResult(int callbackType, ScanResult result) {
+                super.onScanResult(callbackType, result);
+            }
+
+            @Override
+            public void onBatchScanResults(List<ScanResult> results) {
+                super.onBatchScanResults(results);
+            }
+
+            @Override
+            public void onScanFailed(int errorCode) {
+                super.onScanFailed(errorCode);
             }
         });
     }

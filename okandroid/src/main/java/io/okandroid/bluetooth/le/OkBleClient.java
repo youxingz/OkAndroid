@@ -17,6 +17,7 @@ import android.os.Build;
 
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Stack;
 import java.util.UUID;
 
 import io.okandroid.bluetooth.OkBluetoothException;
@@ -34,7 +35,7 @@ public class OkBleClient {
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothGatt mBluetoothGatt;
 
-    private BluetoothGattCallback gattCallback;
+    private OkBleGattCallback gattCallback;
     private String macAddress;
 
     // emitters
@@ -50,7 +51,7 @@ public class OkBleClient {
     private SingleEmitter<Integer> readRssiEmitter;
 
     public enum ConnectionStatus {
-        connecting, connected, disconnected, disconnecting,
+        connecting, services_discovering, connected, disconnected, disconnecting,
     }
 
     private static ConnectionStatus connectionStatus = ConnectionStatus.disconnected;
@@ -81,7 +82,7 @@ public class OkBleClient {
             return false;
         }
 
-        gattCallback = new BluetoothGattCallback() {
+        gattCallback = new OkBleGattCallback() {
             @Override
             public void onPhyUpdate(BluetoothGatt gatt, int txPhy, int rxPhy, int status) {
                 super.onPhyUpdate(gatt, txPhy, rxPhy, status);
@@ -92,36 +93,35 @@ public class OkBleClient {
                 super.onPhyRead(gatt, txPhy, rxPhy, status);
             }
 
+            @SuppressLint("MissingPermission")
             @Override
             public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
                 super.onConnectionStateChange(gatt, status, newState);
                 // gatt.getServices().get(0).getUuid();
-                if (gatt.getServices() != null)
-                    for (BluetoothGattService service : gatt.getServices()) {
-                        UUID uuid = service.getUuid();
-                        System.out.println(uuid);
-                    }
+                // if (gatt.getServices() != null)
+                //     for (BluetoothGattService service : gatt.getServices()) {
+                //         UUID uuid = service.getUuid();
+                //         System.out.println(uuid);
+                //     }
                 if (status != BluetoothGatt.GATT_SUCCESS) return;
                 mBluetoothGatt = gatt;
+                switch (newState) {
+                    case BluetoothProfile.STATE_CONNECTED:
+                        connectionStatus = ConnectionStatus.services_discovering;
+                        mBluetoothGatt.discoverServices(); // 连接后自动扫描可用服务
+                        break;
+                    case BluetoothProfile.STATE_CONNECTING:
+                        connectionStatus = ConnectionStatus.connecting;
+                        break;
+                    case BluetoothProfile.STATE_DISCONNECTED:
+                        connectionStatus = ConnectionStatus.disconnected;
+                        break;
+                    case BluetoothProfile.STATE_DISCONNECTING:
+                        connectionStatus = ConnectionStatus.disconnecting;
+                        break;
+                }
                 if (connectionEmitter != null && !connectionEmitter.isDisposed()) {
-                    switch (newState) {
-                        case BluetoothProfile.STATE_CONNECTED:
-                            connectionStatus = ConnectionStatus.connected;
-                            connectionEmitter.onNext(ConnectionStatus.connected);
-                            break;
-                        case BluetoothProfile.STATE_CONNECTING:
-                            connectionStatus = ConnectionStatus.connecting;
-                            connectionEmitter.onNext(ConnectionStatus.connecting);
-                            break;
-                        case BluetoothProfile.STATE_DISCONNECTED:
-                            connectionStatus = ConnectionStatus.disconnected;
-                            connectionEmitter.onNext(ConnectionStatus.disconnected);
-                            break;
-                        case BluetoothProfile.STATE_DISCONNECTING:
-                            connectionStatus = ConnectionStatus.disconnecting;
-                            connectionEmitter.onNext(ConnectionStatus.disconnecting);
-                            break;
-                    }
+                    connectionEmitter.onNext(connectionStatus);
                 }
             }
 
@@ -129,8 +129,22 @@ public class OkBleClient {
             public void onServicesDiscovered(BluetoothGatt gatt, int status) {
                 super.onServicesDiscovered(gatt, status);
                 if (status != BluetoothGatt.GATT_SUCCESS) return;
+                connectionStatus = ConnectionStatus.connected;
+                if (connectionEmitter != null && !connectionEmitter.isDisposed()) {
+                    connectionEmitter.onNext(connectionStatus);
+                }
                 if (serviceDiscoverEmitter != null && !serviceDiscoverEmitter.isDisposed()) {
                     serviceDiscoverEmitter.onNext(gatt.getServices());
+                }
+            }
+
+            @Override
+            public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+                super.onCharacteristicRead(gatt, characteristic, status);
+                if (status != BluetoothGatt.GATT_SUCCESS) return;
+                ObservableEmitter<OkBleCharacteristic> emitter = readCharacteristicEmitterMap.get(characteristic);
+                if (emitter != null && !emitter.isDisposed()) {
+                    emitter.onNext(new OkBleCharacteristic(characteristic, characteristic.getValue(), System.currentTimeMillis()));
                 }
             }
 
@@ -169,8 +183,8 @@ public class OkBleClient {
              * @param value
              */
             @Override
-            public void onCharacteristicChanged(@androidx.annotation.NonNull BluetoothGatt gatt, @androidx.annotation.NonNull BluetoothGattCharacteristic characteristic, @androidx.annotation.NonNull byte[] value) {
-                super.onCharacteristicChanged(gatt, characteristic, value);
+            public void onOkBleCharacteristicChanged(@androidx.annotation.NonNull BluetoothGatt gatt, @androidx.annotation.NonNull BluetoothGattCharacteristic characteristic, @androidx.annotation.NonNull byte[] value) {
+                // super.onCharacteristicChanged(gatt, characteristic, value);
                 // find target
                 ObservableEmitter<OkBleCharacteristic> emitter = characteristicChangeEmitterMap.get(characteristic);
                 if (emitter != null && !emitter.isDisposed()) {
@@ -255,6 +269,7 @@ public class OkBleClient {
                 return;
             }
             mBluetoothGatt = device.connectGatt(context, autoConnect, gattCallback);
+            gattCallback.setGatt(mBluetoothGatt);
             connectionStatus = ConnectionStatus.connecting;
             emitter.onNext(ConnectionStatus.connecting);
         });
@@ -284,8 +299,16 @@ public class OkBleClient {
     }
 
     // common api
+
+    public BluetoothGatt getBluetoothGatt() {
+        return mBluetoothGatt;
+    }
+
     public BluetoothGattCharacteristic getCharacteristic(UUID serviceUuid, UUID characteristicUuid) {
         if (mBluetoothGatt == null) throw new IllegalAccessError("Please connect to device first.");
+        // for (BluetoothGattService service : mBluetoothGatt.getServices()) {
+        //     System.out.println(service.getUuid());
+        // }
         BluetoothGattService service = mBluetoothGatt.getService(serviceUuid);
         if (service == null)
             throw new IllegalArgumentException("Unknown Service UUID: " + serviceUuid);
@@ -293,6 +316,21 @@ public class OkBleClient {
         // if (characteristic == null)
         //     throw new IllegalArgumentException("Unknown Characteristic UUID: " + characteristicUuid);
         return service.getCharacteristic(characteristicUuid);
+    }
+
+    @SuppressLint("MissingPermission")
+    public boolean enableNotification(BluetoothGattCharacteristic characteristic, UUID descriptorUUID, boolean enabled) {
+        if (mBluetoothGatt == null) throw new IllegalAccessError("Please connect to device first.");
+        boolean success = mBluetoothGatt.setCharacteristicNotification(characteristic, enabled);
+        if (!success) return false;
+        // write descriptor:
+        BluetoothGattDescriptor descriptor = characteristic.getDescriptor(descriptorUUID);
+        if (descriptor != null) {
+            descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+            descriptor.setValue(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
+            success = mBluetoothGatt.writeDescriptor(descriptor);
+        }
+        return success;
     }
 
     @SuppressLint("MissingPermission")
@@ -340,7 +378,8 @@ public class OkBleClient {
         return Observable.create(emitter -> {
             if (!validGatt(emitter)) return;
             readCharacteristicEmitterMap.put(characteristic, emitter);
-            mBluetoothGatt.readCharacteristic(characteristic);
+            // mBluetoothGatt.readCharacteristic(characteristic);
+            gattCallback.readCharacteristic(characteristic); // stack 串行
         });
     }
 
@@ -367,11 +406,22 @@ public class OkBleClient {
         });
     }
 
-    public Observable<OkBleCharacteristic> observeNotification(BluetoothGattCharacteristic characteristic) {
+    @SuppressLint("MissingPermission")
+    public Observable<OkBleCharacteristic> observeNotification(BluetoothGattDescriptor descriptor) {
         return Observable.create(emitter -> {
-            characteristicChangeEmitterMap.put(characteristic, emitter);
+            if (!validGatt(emitter)) return;
+            BluetoothGattCharacteristic characteristic = descriptor.getCharacteristic();
+            boolean success = mBluetoothGatt.setCharacteristicNotification(characteristic, true);
+            if (success) {
+                characteristicChangeEmitterMap.put(characteristic, emitter);
+                // BluetoothGattDescriptor descriptor = characteristic.getDescriptor(UUID.fromString(characteristic.getUuid()));
+                descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                descriptor.setValue(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
+                success = mBluetoothGatt.writeDescriptor(descriptor);
+            }
         });
     }
+
 
     public Observable<List<BluetoothGattService>> observeServiceChanging() {
         return Observable.create(emitter -> {

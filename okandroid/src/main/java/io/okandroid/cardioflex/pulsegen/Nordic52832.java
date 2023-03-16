@@ -27,33 +27,8 @@ public class Nordic52832 {
         this.genericAccessService = new GenericAccessService(client);
     }
 
-    public void connect() {
-        this.client.connect(true).observeOn(OkAndroid.mainThread()).subscribeOn(Schedulers.io()).subscribe(new Observer<OkBleClient.ConnectionStatus>() {
-            @Override
-            public void onSubscribe(@NonNull Disposable d) {
-                // start connecting...
-            }
-
-            @Override
-            public void onNext(OkBleClient.@NonNull ConnectionStatus connectionStatus) {
-                switch (connectionStatus) {
-                    case connecting:
-                    case connected:
-                    case disconnecting:
-                    case disconnected:
-                }
-            }
-
-            @Override
-            public void onError(@NonNull Throwable e) {
-                e.printStackTrace();
-            }
-
-            @Override
-            public void onComplete() {
-                // connection end.
-            }
-        });
+    public Observable<OkBleClient.ConnectionStatus> connect() {
+        return this.client.connect(true).observeOn(OkAndroid.mainThread()).subscribeOn(Schedulers.io());
     }
 
     public void disconnect() {
@@ -68,7 +43,7 @@ public class Nordic52832 {
      * @return 0-100
      */
     public Observable<Integer> battery() {
-        return batteryService.batteryLevel();
+        return batteryService.batteryLevel().subscribeOn(Schedulers.io()).observeOn(OkAndroid.mainThread());
     }
 
     /**
@@ -77,7 +52,7 @@ public class Nordic52832 {
      * @return hex byte[]
      */
     public Single<byte[]> deviceId() {
-        return deviceInformationService.deviceId();
+        return deviceInformationService.deviceId().subscribeOn(Schedulers.io()).observeOn(OkAndroid.mainThread());
     }
 
     /**
@@ -86,7 +61,7 @@ public class Nordic52832 {
      * @return
      */
     public Single<String> manufacturerName() {
-        return deviceInformationService.manufacturerName();
+        return deviceInformationService.manufacturerName().subscribeOn(Schedulers.io()).observeOn(OkAndroid.mainThread());
     }
 
     /**
@@ -95,7 +70,7 @@ public class Nordic52832 {
      * @return
      */
     public Single<String> modelNumber() {
-        return deviceInformationService.modelNumber();
+        return deviceInformationService.modelNumber().subscribeOn(Schedulers.io()).observeOn(OkAndroid.mainThread());
     }
 
 
@@ -105,7 +80,7 @@ public class Nordic52832 {
      * @return @String.
      */
     public Single<String> deviceName() {
-        return genericAccessService.deviceName();
+        return genericAccessService.deviceName().subscribeOn(Schedulers.io()).observeOn(OkAndroid.mainThread());
     }
 
     /**
@@ -115,7 +90,7 @@ public class Nordic52832 {
      * @return
      */
     public Single<String> deviceName(String name) {
-        return genericAccessService.deviceName(name);
+        return genericAccessService.deviceName(name).subscribeOn(Schedulers.io()).observeOn(OkAndroid.mainThread());
     }
 
     /**
@@ -124,7 +99,7 @@ public class Nordic52832 {
      * @return @String, e.g. 960 (HID, Human Interface Device)
      */
     public Single<Integer> appearance() {
-        return genericAccessService.appearance();
+        return genericAccessService.appearance().subscribeOn(Schedulers.io()).observeOn(OkAndroid.mainThread());
     }
 
 
@@ -134,7 +109,7 @@ public class Nordic52832 {
      * @return @String.
      */
     public Single<String> ppcp() {
-        return genericAccessService.ppcp();
+        return genericAccessService.ppcp().subscribeOn(Schedulers.io()).observeOn(OkAndroid.mainThread());
     }
 
     /**
@@ -143,6 +118,6 @@ public class Nordic52832 {
      * @return @String.
      */
     public Single<String> centralAddressResolution() {
-        return genericAccessService.centralAddressResolution();
+        return genericAccessService.centralAddressResolution().subscribeOn(Schedulers.io()).observeOn(OkAndroid.mainThread());
     }
 }
