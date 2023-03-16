@@ -46,6 +46,22 @@
                 android:text="0 rpm"
                 android:textColor="@color/black" />
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="当前方向"
+                android:paddingLeft="20dp"
+                android:textColor="@color/black" />
+
+            <TextView
+                android:id="@+id/direction_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="12dp"
+                android:layout_marginRight="12dp"
+                android:text="逆时针↪️"
+                android:textColor="@color/black" />
+
         </LinearLayout>
 
         <ToggleButton
@@ -63,16 +79,17 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="设置速度"
+                android:text="周期内第一项"
                 android:textColor="@color/black" />
 
             <EditText
-                android:id="@+id/velocity_edit"
+                android:id="@+id/velocity_edit1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:minWidth="40dp"
                 android:layout_marginLeft="12dp"
                 android:digits="0123456789"
-                android:text="600"
+                android:text="60"
                 android:textColor="@color/black" />
 
             <TextView
@@ -81,32 +98,88 @@
                 android:text="rpm"
                 android:textColor="@color/black" />
 
-        </LinearLayout>
 
-        <Button
-            android:id="@+id/btn_velocity_edit"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="设置" />
-
-        <LinearLayout
-            android:layout_width="100dp"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <Switch
-                android:id="@+id/direction_btn"
-                android:layout_width="match_parent"
+            <EditText
+                android:id="@+id/time_edit1"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:switchMinWidth="60dp"
-                android:text="方向设置     " />
+                android:minWidth="60dp"
+                android:layout_marginLeft="12dp"
+                android:digits="0123456789"
+                android:text="200"
+                android:textColor="@color/black" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="（开启为正，关闭为逆）"
-                android:textSize="12sp" />
+                android:text="ms"
+                android:textColor="@color/black" />
+
+            <ToggleButton
+                android:id="@+id/direction_btn1"
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="12dp"
+                android:textOff="逆时针"
+                android:textOn="顺时针" />
         </LinearLayout>
+
+        <TextView />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="周期内第二项"
+                android:textColor="@color/black" />
+
+            <EditText
+                android:id="@+id/velocity_edit2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="40dp"
+                android:layout_marginLeft="12dp"
+                android:digits="0123456789"
+                android:text="150"
+                android:textColor="@color/black" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="rpm"
+                android:textColor="@color/black" />
+
+
+            <EditText
+                android:id="@+id/time_edit2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="60dp"
+                android:layout_marginLeft="12dp"
+                android:digits="0123456789"
+                android:text="700"
+                android:textColor="@color/black" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ms"
+                android:textColor="@color/black" />
+
+            <ToggleButton
+                android:id="@+id/direction_btn2"
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="12dp"
+                android:textOff="逆时针"
+                android:textOn="顺时针" />
+        </LinearLayout>
+
+        <TextView />
 
     </GridLayout>
 

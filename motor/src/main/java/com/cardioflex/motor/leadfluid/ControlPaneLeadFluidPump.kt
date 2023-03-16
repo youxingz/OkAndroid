@@ -1,11 +1,13 @@
 package com.cardioflex.motor.leadfluid
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.*
 import com.cardioflex.motor.R
+import com.cardioflex.motor.utils.parseInt
 import com.google.android.material.snackbar.Snackbar
 import com.serotonin.modbus4j.exception.ModbusTransportException
 import io.okandroid.OkAndroid
@@ -18,7 +20,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers
 
 
 class ControlPaneLeadFluidPump(
-    private val context: LeadFluidActivity,
+    private val context: Activity,
     private val device: SerialDevice,
     private val slaveId: Int
 ) : LinearLayout(context) {
@@ -50,7 +52,7 @@ class ControlPaneLeadFluidPump(
         try {
             val modbus = Modbus(device)
             val modbusMaster = modbus.master()
-            modbusMaster.retries = 0
+            modbusMaster.retries = 3
             motor = LeadFluidPumpObservable(LeadFluidPump(modbusMaster, slaveId))
         } catch (e: ModbusTransportException) {
             e.printStackTrace()
@@ -87,7 +89,7 @@ class ControlPaneLeadFluidPump(
                         ).show()
                     }, { e ->
                         e.printStackTrace()
-                        e.localizedMessage?.let { context.appendLog(it) }
+//                        e.localizedMessage?.let { context.appendLog(it) }
                         Snackbar.make(this, "【蠕动泵 $slaveId 号】${if (isChecked) "启动" else "急停"}失败", 0)
                             .show()
                     })
@@ -102,10 +104,10 @@ class ControlPaneLeadFluidPump(
                 }
                 disposableVelocity = motor.velocity().subscribeOn(Schedulers.newThread())
                     .observeOn(OkAndroid.mainThread()).subscribe({
-                        velocityText.text = "$it RPM"
+                        velocityText.text = "${it / 10} RPM"
                     }, { e ->
                         e.printStackTrace()
-                        e.localizedMessage?.let { context.appendLog(it) }
+//                        e.localizedMessage?.let { context.appendLog(it) }
                         Snackbar.make(this, "【蠕动泵 $slaveId 号】速度读取失败，请重试", 0).show()
                         velocityToggle.isChecked = false
                     })
@@ -117,13 +119,13 @@ class ControlPaneLeadFluidPump(
         }
         velocityDoneBtn.setOnClickListener { v ->
             val text = velocityEdit.text.toString()
-            speed = Integer.parseInt(text)
+            speed = parseInt(text)
             motor.velocity(speed).subscribeOn(Schedulers.io()).observeOn(OkAndroid.mainThread())
                 .subscribe({
                     Snackbar.make(v, "【蠕动泵 $slaveId 号】速度设置成功 [$speed] rpm", 0).show();
                 }, { e ->
                     e.printStackTrace()
-                    e.localizedMessage?.let { context.appendLog(it) }
+//                    e.localizedMessage?.let { context.appendLog(it) }
                     Snackbar.make(this, "【蠕动泵 $slaveId 号】速度设置失败", 0).show()
                 })
         }

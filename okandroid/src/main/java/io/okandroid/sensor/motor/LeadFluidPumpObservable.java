@@ -23,7 +23,7 @@ public class LeadFluidPumpObservable {
         return Observable.create(emitter -> {
             while (true) {
                 try {
-                    Thread.sleep(800); // ms
+                    Thread.sleep(50); // ms
                     // 持续读
                     int speed = leadFluidPump.velocity();
                     if (emitter.isDisposed()) return;
@@ -91,7 +91,7 @@ public class LeadFluidPumpObservable {
         return Observable.create(emitter -> {
             while (true) {
                 try {
-                    Thread.sleep(500); // ms
+                    Thread.sleep(50); // ms
                     int direction = leadFluidPump.direction();
                     if (emitter.isDisposed()) return;
                     emitter.onNext(direction);

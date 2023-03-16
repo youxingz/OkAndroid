@@ -21,7 +21,7 @@
         </activity>
 
         <activity
-            android:name=".leadfluid.LeadFluidActivity"
+            android:name=".leadfluid.LeadFluidActivityX"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
