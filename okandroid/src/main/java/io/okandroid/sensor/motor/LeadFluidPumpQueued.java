@@ -48,7 +48,7 @@ public class LeadFluidPumpQueued {
     }
 
     @SuppressLint("CheckResult")
-    public Observable<Integer> velocityMulti(int interval) throws ModbusTransportException {
+    public Observable<Integer> velocityMulti(int interval) {
         // FunctionCode.READ_HOLDING_REGISTERS
         return Observable.create(emitter -> {
             while (emitter != null && !emitter.isDisposed()) {
@@ -102,7 +102,7 @@ public class LeadFluidPumpQueued {
     }
 
     @SuppressLint("CheckResult")
-    public Observable<Integer> directionMulti(int interval) throws ModbusTransportException {
+    public Observable<Integer> directionMulti(int interval) {
         // FunctionCode.READ_HOLDING_REGISTERS
         return Observable.create(emitter -> {
             while (emitter != null && !emitter.isDisposed()) {

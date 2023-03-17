@@ -166,22 +166,31 @@ class ControlPaneLeadFluidPumpX(
         // clear
         clearToggle.setOnCheckedChangeListener { _, isChecked ->
             val direction = if (clearDirectionToggle.isChecked) 0 else 1
-            setPeriodItem(200, direction)
-            motor.turn(isChecked).subscribeOn(Schedulers.io()).observeOn(OkAndroid.mainThread())
-                .subscribe({
-                    Snackbar.make(
-                        this, "【蠕动泵 $slaveId 号】高速${if (isChecked) "启动" else "急停"}成功", 0
-                    ).show()
-                }, { e ->
-                    e.printStackTrace()
-                    e.localizedMessage?.let { context.appendLog(it) }
-                    Snackbar.make(this, "【蠕动泵 $slaveId 号】高速${if (isChecked) "启动" else "急停"}失败", 0)
-                        .show()
-                })
+            setPeriodItem("-", 200, direction)
+            try {
+                motor.turn(isChecked).subscribeOn(Schedulers.io()).observeOn(OkAndroid.mainThread())
+                    .subscribe({
+                        Snackbar.make(
+                            this, "【蠕动泵 $slaveId 号】高速${if (isChecked) "启动" else "急停"}成功", 0
+                        ).show()
+                    }, { e ->
+                        e.printStackTrace()
+                        e.localizedMessage?.let { context.appendLog(it) }
+                        Snackbar.make(
+                            this,
+                            "【蠕动泵 $slaveId 号】高速${if (isChecked) "启动" else "急停"}失败",
+                            0
+                        )
+                            .show()
+                    })
+            } catch (e: ModbusTransportException) {
+                // e.printStackTrace()
+                e.localizedMessage?.let { context.appendLog(it) }
+            }
         }
         clearDirectionToggle.setOnCheckedChangeListener { _, isChecked ->
             val direction = if (isChecked) 0 else 1
-            setPeriodItem(200, direction)
+            setPeriodItem("-", 200, direction)
         }
     }
 
@@ -197,27 +206,33 @@ class ControlPaneLeadFluidPumpX(
             val time2 = parseInt(timeEdit2.text.toString())
             val direction2 = if (directionToggle2.isChecked) 0 else 1
 
-            Single.concat(
-                motor.direction(direction1),
-                motor.velocity(speed1 * 10),
-                wait(time1.toLong())
-            ).observeOn(OkAndroid.mainThread()).subscribeOn(OkAndroid.subscribeIOThread())
-                .subscribe({
-                    Log.i("WORKING", "working1...: $speed1 rpm, $time1 ms")
-                }, { e -> e.printStackTrace() })
-            // wait time1 ms.
+            setPeriodItem("1", speed1, direction1)
             Thread.sleep(time1.toLong())
-            Single.concat(
-                motor.direction(direction2),
-                motor.velocity(speed2 * 10),
-                wait(time2.toLong())
-            ).observeOn(OkAndroid.mainThread()).subscribeOn(OkAndroid.subscribeIOThread())
-                .subscribe({
-                    Log.i("WORKING", "working2...: $speed2 rpm, $time2 ms")
-                    // done
-                }, { e -> e.printStackTrace() })
-            // wait time2 ms.
+            setPeriodItem("2", speed2, direction2)
             Thread.sleep(time2.toLong())
+
+//            Single.concat(
+//                motor.direction(direction1),
+//                motor.velocity(speed1 * 10)
+//            ).observeOn(OkAndroid.mainThread()).subscribeOn(OkAndroid.subscribeIOThread())
+//                .subscribe({
+//                    val log = "[1]: $speed1 rpm, $time1 ms"
+//                    Log.i("WORKING", log)
+//                    context.appendLog("RUNNING: $log")
+//                }, { e -> e.printStackTrace() })
+//            Thread.sleep(time1.toLong())
+//            Single.concat(
+//                motor.direction(direction2),
+//                motor.velocity(speed2 * 10)
+//            ).observeOn(OkAndroid.mainThread()).subscribeOn(OkAndroid.subscribeIOThread())
+//                .subscribe({
+//                    val log = "[2]: $speed2 rpm, $time2 ms"
+//                    Log.i("WORKING", log)
+//                    context.appendLog("RUNNING: $log")
+//                    // done
+//                }, { e -> e.printStackTrace() })
+            // wait time2 ms.
+//            Thread.sleep(time2.toLong())
 //            Log.i("WORKING", "working1...: $speed1 rpm, $time1 ms")
 //            setPeriodItem(speed1, direction1)
 //            if (!success) {
@@ -235,23 +250,37 @@ class ControlPaneLeadFluidPumpX(
 
     // - direction: 1: 逆, 0: 顺
     @SuppressLint("CheckResult")
-    private fun setPeriodItem(speed: Int, direction: Int): Flowable<Any> {
-        return Single.concat(motor.direction(direction), motor.velocity(speed * 10))
-//        motor.direction(direction).subscribeOn(Schedulers.io())
-//            .observeOn(OkAndroid.mainThread()).subscribe({
-//            }, {
-////                it.printStackTrace()
-//                working = false
-//            })
-////        if (!working) return false
-//        motor.velocity(speed * 10).subscribeOn(Schedulers.io())
+    private fun setPeriodItem(tag: String, speed: Int, direction: Int) {
+//        Single.concat(motor.direction(direction), motor.velocity(speed * 10))
 //            .observeOn(OkAndroid.mainThread())
+//            .subscribeOn(OkAndroid.subscribeIOThread())
 //            .subscribe({
-//            }, { e ->
-////                e.printStackTrace()
-////                e.localizedMessage?.let { context.appendLog(it) }
-//                working = false
-//            })
+//                val log = "[$tag]: $speed rpm, ${if (direction == 0) "顺时针" else "逆时针"}"
+//                Log.i("WORKING", log)
+//                context.appendLog("RUNNING: $log")
+//            }, { e -> e.printStackTrace() })
+
+        motor.direction(direction).subscribeOn(Schedulers.io())
+            .observeOn(OkAndroid.mainThread()).subscribe({
+                val log = "[$tag]: $speed rpm"
+                Log.i("WORKING", log)
+                context.appendLog("RUNNING: $log")
+            }, {
+//                it.printStackTrace()
+                working = false
+            })
+//        if (!working) return false
+        motor.velocity(speed * 10).subscribeOn(Schedulers.io())
+            .observeOn(OkAndroid.mainThread())
+            .subscribe({
+                val log = "[$tag]${if (direction == 0) "顺时针" else "逆时针"} ($direction)"
+                Log.i("WORKING", log)
+                context.appendLog("RUNNING: $log")
+            }, { e ->
+//                e.printStackTrace()
+                e.localizedMessage?.let { context.appendLog(it) }
+                working = false
+            })
     }
 
     private fun wait(time: Long): Single<Any> {
