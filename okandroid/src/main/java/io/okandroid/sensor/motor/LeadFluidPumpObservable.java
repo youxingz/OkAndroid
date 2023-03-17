@@ -73,7 +73,7 @@ public class LeadFluidPumpObservable {
     public Single<Boolean> turn(boolean turnOn) {
         return Single.create(emitter -> {
             try {
-                leadFluidPump.turn(turnOn ? 1 : 0);
+                leadFluidPump.turn(turnOn);
                 if (emitter.isDisposed()) return;
                 emitter.onSuccess(turnOn);
             } catch (Exception e) {

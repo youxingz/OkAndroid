@@ -75,12 +75,14 @@ public class LeadFluidPump {
         return ModbusUtils.toShort(data[0], data[1]);
     }
 
-    public void turn(int turnOn) throws ModbusTransportException {
+    public boolean turn(boolean turnOn) throws ModbusTransportException {
         // FunctionCode.WRITE_REGISTER
-        WriteRegisterResponse response = (WriteRegisterResponse) master.send(new WriteRegisterRequest(slaveId, 3102, turnOn));
+        WriteRegisterResponse response = (WriteRegisterResponse) master.send(new WriteRegisterRequest(slaveId, 3102, turnOn ? 1 : 0));
         if (response.isException()) {
             // error.
+            return false;
         }
+        return true;
     }
 
 }
