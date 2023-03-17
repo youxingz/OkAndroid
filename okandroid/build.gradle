@@ -51,7 +51,7 @@ dependencies {
     api 'com.licheedev:android-serialport:2.1.3'
 //    api 'com.github.licheedev:modbus4j:v3.0.6-alpha1'
 //    api 'com.infiniteautomation:modbus4j:3.0.6-SNAPSHOT'
-    api 'com.github.youxingz:modbus4j:45069283b6'
+    api 'com.github.youxingz:modbus4j:800351afdc'
 
     api 'com.github.mik3y:usb-serial-for-android:3.4.6'
 }

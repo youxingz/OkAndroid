@@ -76,13 +76,15 @@ public class Modbus {
         });
     }
 
-    private void continueRequestWorking() {
+    private synchronized void continueRequestWorking() {
         if (requestQueue.isEmpty()) return;
         OkModbusRequest request = requestQueue.poll();
         SingleEmitter<ModbusResponse> emitter = request.getEmitter();
         ModbusRequest modbusRequest = request.getRequest();
         try {
             ModbusResponse response = modbusMaster.send(modbusRequest);
+            // 间隔 50 ms 执行下一条指令
+            Thread.sleep(50);
             if (emitter != null && !emitter.isDisposed()) {
                 if (response.isException()) {
                     // exception
@@ -91,7 +93,7 @@ public class Modbus {
                     emitter.onSuccess(response);
                 }
             }
-        } catch (ModbusTransportException e) {
+        } catch (ModbusTransportException | InterruptedException e) {
             // e.printStackTrace();
             if (emitter != null && !emitter.isDisposed()) {
                 emitter.onError(e);

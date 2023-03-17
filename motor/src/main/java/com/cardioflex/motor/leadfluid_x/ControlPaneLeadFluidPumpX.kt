@@ -57,6 +57,7 @@ class ControlPaneLeadFluidPumpX(
     private lateinit var modbusMaster: ModbusMaster
 
     private var isExceptionInWorking = false
+    private var isExceptionInClearing = false
 
     init {
         initModbus()
@@ -136,7 +137,7 @@ class ControlPaneLeadFluidPumpX(
                 if (disposableDirection != null && !disposableDirection!!.isDisposed) {
                     disposableDirection!!.dispose()
                 }
-                disposableVelocity = motor.velocityMulti(80).subscribeOn(Schedulers.newThread())
+                disposableVelocity = motor.velocityMulti(200).subscribeOn(Schedulers.newThread())
                     .observeOn(OkAndroid.mainThread()).subscribe({
                         velocityText.text = "${it / 10} RPM"
                     }, { e ->
@@ -145,7 +146,7 @@ class ControlPaneLeadFluidPumpX(
                         Snackbar.make(this, "【蠕动泵 $slaveId 号】速度读取失败，请重试", 0).show()
                         velocityToggle.isChecked = false
                     })
-                disposableDirection = motor.directionMulti(80).subscribeOn(Schedulers.newThread())
+                disposableDirection = motor.directionMulti(200).subscribeOn(Schedulers.newThread())
                     .observeOn(OkAndroid.mainThread()).subscribe({
                         directionText.text = if (it == 0) "顺时针↩️" else "逆时针↪️"
                     }, { e ->
@@ -165,10 +166,17 @@ class ControlPaneLeadFluidPumpX(
         }
         // clear
         clearToggle.setOnCheckedChangeListener { _, isChecked ->
-            val direction = if (clearDirectionToggle.isChecked) 0 else 1
-            setPeriodItem("-", 200, direction)
+            if (isChecked) {
+                val direction = if (clearDirectionToggle.isChecked) 0 else 1
+                setPeriodItem("-", 200, direction)
+            }
             try {
-                motor.turn(isChecked).subscribeOn(Schedulers.io()).observeOn(OkAndroid.mainThread())
+                if (isExceptionInClearing) {
+                    isExceptionInClearing = false
+                    return@setOnCheckedChangeListener
+                }
+                motor.turn(isChecked).subscribeOn(Schedulers.io())
+                    .observeOn(OkAndroid.mainThread())
                     .subscribe({
                         Snackbar.make(
                             this, "【蠕动泵 $slaveId 号】高速${if (isChecked) "启动" else "急停"}成功", 0
@@ -180,8 +188,11 @@ class ControlPaneLeadFluidPumpX(
                             this,
                             "【蠕动泵 $slaveId 号】高速${if (isChecked) "启动" else "急停"}失败",
                             0
-                        )
-                            .show()
+                        ).show()
+                        if (isChecked) { // 启动失败
+                            isExceptionInClearing = true
+                            clearToggle.isChecked = false
+                        }
                     })
             } catch (e: ModbusTransportException) {
                 // e.printStackTrace()
