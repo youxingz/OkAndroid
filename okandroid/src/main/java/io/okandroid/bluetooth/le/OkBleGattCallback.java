@@ -5,61 +5,137 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
+import android.bluetooth.BluetoothStatusCodes;
 
+import java.util.Hashtable;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
+
+import io.okandroid.bluetooth.OkBluetoothException;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.ObservableEmitter;
+import io.reactivex.rxjava3.core.SingleEmitter;
 
 /**
  * - 修复兼容性问题：在部分机型上存在部分 callback 不存在的问题，统一封装以兼容各种版本设备
  * - 增加 characteristic 队列，以解决多处并发引起的丢包问题
  */
 public abstract class OkBleGattCallback extends BluetoothGattCallback {
-    private Queue<BluetoothGattCharacteristic> characteristics = new LinkedBlockingQueue<>();
+    private Queue<OkBleCharacteristicReadRequest> requestReadQueue = new LinkedBlockingQueue<>();
+    private Queue<OkBleCharacteristicWriteRequest> requestWriteQueue = new LinkedBlockingQueue<>();
+
+    private Hashtable<BluetoothGattCharacteristic, ObservableEmitter<OkBleCharacteristic>> characteristicChangeEmitterMap = new Hashtable<>();
     private BluetoothGatt gatt;
 
-    private volatile boolean isRunning;
+    private volatile boolean isReadRunning;
+    private volatile boolean isWriteRunning;
+    private SingleEmitter<OkBleCharacteristic> currentReadEmitter;
+    private SingleEmitter<BluetoothGattCharacteristic> currentWriteEmitter;
 
     public void setGatt(BluetoothGatt gatt) {
         this.gatt = gatt;
     }
 
-    public abstract void onOkBleCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, byte[] value, int status);
+    public abstract void onOkBleCharacteristicRead(BluetoothGatt gatt, SingleEmitter<OkBleCharacteristic> emitter, BluetoothGattCharacteristic characteristic, byte[] value, int status);
+
+    public abstract void onOkBleCharacteristicWrite(BluetoothGatt gatt, SingleEmitter<BluetoothGattCharacteristic> emitter, BluetoothGattCharacteristic characteristic, int status);
 
     public abstract void onOkBleDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status, byte[] value);
 
-    public abstract void onOkBleCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, byte[] value);
+    public abstract void onOkBleCharacteristicChanged(BluetoothGatt gatt, ObservableEmitter<OkBleCharacteristic> emitter, BluetoothGattCharacteristic characteristic, byte[] value);
 
     @SuppressLint("MissingPermission")
-    public void readCharacteristic(BluetoothGattCharacteristic characteristic) {
-        characteristics.add(characteristic);
+    public void readCharacteristic(OkBleCharacteristicReadRequest request) {
+        requestReadQueue.add(request);
         continueReading();
+    }
+
+    @SuppressLint("MissingPermission")
+    public void writeCharacteristic(OkBleCharacteristicWriteRequest request) {
+        requestWriteQueue.add(request);
+        continueWriting();
+    }
+
+    @SuppressLint("MissingPermission")
+    public Observable<OkBleCharacteristic> observeNotification(BluetoothGattDescriptor descriptor) {
+        return Observable.create(emitter -> {
+            BluetoothGattCharacteristic characteristic = descriptor.getCharacteristic();
+            boolean success = gatt.setCharacteristicNotification(characteristic, true);
+            if (success) {
+                characteristicChangeEmitterMap.put(characteristic, emitter);
+                // BluetoothGattDescriptor descriptor = characteristic.getDescriptor(UUID.fromString(characteristic.getUuid()));
+                descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                descriptor.setValue(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
+                success = gatt.writeDescriptor(descriptor);
+            }
+        });
     }
 
     @Override
     public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicRead(gatt, characteristic, status);
         // if (status != BluetoothGatt.GATT_SUCCESS) return;
-        isRunning = false;
-        this.onOkBleCharacteristicRead(gatt, characteristic, characteristic.getValue(), status);
+        isReadRunning = false;
+        SingleEmitter<OkBleCharacteristic> emitter = currentReadEmitter;
         continueReading();
+        this.onOkBleCharacteristicRead(gatt, emitter, characteristic, characteristic.getValue(), status);
     }
 
     @Override
     public void onCharacteristicRead(@androidx.annotation.NonNull BluetoothGatt gatt, @androidx.annotation.NonNull BluetoothGattCharacteristic characteristic, @androidx.annotation.NonNull byte[] value, int status) {
         super.onCharacteristicRead(gatt, characteristic, value, status);
         // if (status != BluetoothGatt.GATT_SUCCESS) return;
-        isRunning = false;
-        this.onOkBleCharacteristicRead(gatt, characteristic, value, status);
+        isReadRunning = false;
+        SingleEmitter<OkBleCharacteristic> emitter = currentReadEmitter;
         continueReading();
+        this.onOkBleCharacteristicRead(gatt, emitter, characteristic, value, status);
     }
 
     @SuppressLint("MissingPermission")
     private void continueReading() {
-        if (characteristics.isEmpty()) return;
-        if (!isRunning) {
-            isRunning = true;
-            BluetoothGattCharacteristic characteristic = characteristics.poll();
-            gatt.readCharacteristic(characteristic);
+        if (requestReadQueue.isEmpty()) return;
+        if (!isReadRunning) {
+            isReadRunning = true;
+            OkBleCharacteristicReadRequest request = requestReadQueue.poll();
+            assert request != null;
+            currentReadEmitter = request.getEmitter();
+            gatt.readCharacteristic(request.getCharacteristic());
+        }
+    }
+
+    @Override
+    public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+        super.onCharacteristicWrite(gatt, characteristic, status);
+        isWriteRunning = false;
+        SingleEmitter<BluetoothGattCharacteristic> emitter = currentWriteEmitter;
+        continueWriting();
+        this.onOkBleCharacteristicWrite(gatt, emitter, characteristic, status);
+    }
+
+
+    @SuppressLint({"MissingPermission", "WrongConstant"})
+    private void continueWriting() {
+        if (requestWriteQueue.isEmpty()) return;
+        if (!isWriteRunning) {
+            isWriteRunning = true;
+            OkBleCharacteristicWriteRequest request = requestWriteQueue.poll();
+            assert request != null;
+            SingleEmitter<BluetoothGattCharacteristic> emitter = request.getEmitter();
+            BluetoothGattCharacteristic characteristic = request.getCharacteristic();
+            currentWriteEmitter = emitter;
+            int code = -1;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                code = gatt.writeCharacteristic(characteristic, request.getData(), request.getWriteType());
+            } else {
+                characteristic.setValue(request.getData());
+                characteristic.setWriteType(request.getWriteType());
+                code = gatt.writeCharacteristic(characteristic) ? 0 : -1;
+            }
+            if (code != BluetoothStatusCodes.SUCCESS) {
+                if (!emitter.isDisposed()) {
+                    emitter.onError(new OkBluetoothException.DeviceWriteException("Device write error.", code));
+                }
+            }
         }
     }
 
@@ -79,18 +155,80 @@ public abstract class OkBleGattCallback extends BluetoothGattCallback {
     /**
      * @deprecated
      */
+    @SuppressLint("MissingPermission")
     @Deprecated
     @Override
     public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
         super.onCharacteristicChanged(gatt, characteristic);
-        this.onOkBleCharacteristicChanged(gatt, characteristic, characteristic.getValue());
+        ObservableEmitter<OkBleCharacteristic> emitter = characteristicChangeEmitterMap.get(characteristic);
+        if (emitter != null && !emitter.isDisposed()) {
+            this.onOkBleCharacteristicChanged(gatt, emitter, characteristic, characteristic.getValue());
+        } else {
+            characteristicChangeEmitterMap.remove(characteristic);
+            gatt.setCharacteristicNotification(characteristic, false); // disable notification.
+        }
     }
 
+    @SuppressLint("MissingPermission")
     @Override
     public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, byte[] value) {
         super.onCharacteristicChanged(gatt, characteristic, value);
-        this.onOkBleCharacteristicChanged(gatt, characteristic, value);
+        ObservableEmitter<OkBleCharacteristic> emitter = characteristicChangeEmitterMap.get(characteristic);
+        if (emitter != null && !emitter.isDisposed()) {
+            this.onOkBleCharacteristicChanged(gatt, emitter, characteristic, value);
+        } else {
+            characteristicChangeEmitterMap.remove(characteristic);
+            gatt.setCharacteristicNotification(characteristic, false); // disable notification.
+        }
     }
 
 
+    public static class OkBleCharacteristicReadRequest {
+        private SingleEmitter<OkBleCharacteristic> emitter;
+        private BluetoothGattCharacteristic characteristic;
+
+        public OkBleCharacteristicReadRequest(SingleEmitter<OkBleCharacteristic> emitter, BluetoothGattCharacteristic characteristic) {
+            this.emitter = emitter;
+            this.characteristic = characteristic;
+        }
+
+        public SingleEmitter<OkBleCharacteristic> getEmitter() {
+            return emitter;
+        }
+
+        public BluetoothGattCharacteristic getCharacteristic() {
+            return characteristic;
+        }
+    }
+
+    public static class OkBleCharacteristicWriteRequest {
+        private SingleEmitter<BluetoothGattCharacteristic> emitter;
+        private BluetoothGattCharacteristic characteristic;
+
+        private byte[] data;
+        private int writeType;
+
+        public OkBleCharacteristicWriteRequest(SingleEmitter<BluetoothGattCharacteristic> emitter, BluetoothGattCharacteristic characteristic, byte[] data, int writeType) {
+            this.emitter = emitter;
+            this.characteristic = characteristic;
+            this.data = data;
+            this.writeType = writeType;
+        }
+
+        public SingleEmitter<BluetoothGattCharacteristic> getEmitter() {
+            return emitter;
+        }
+
+        public BluetoothGattCharacteristic getCharacteristic() {
+            return characteristic;
+        }
+
+        public byte[] getData() {
+            return data;
+        }
+
+        public int getWriteType() {
+            return writeType;
+        }
+    }
 }
