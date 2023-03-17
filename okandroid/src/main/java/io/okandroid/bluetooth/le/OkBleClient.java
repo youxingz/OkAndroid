@@ -29,13 +29,13 @@ import io.reactivex.rxjava3.core.SingleOnSubscribe;
  */
 public class OkBleClient {
 
-    private Context context;
+    private final Context context;
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothGatt mBluetoothGatt;
 
     private OkBleGattCallback gattCallback;
-    private String macAddress;
+    private final String macAddress;
 
     // emitters
     private ObservableEmitter<ConnectionStatus> connectionEmitter;
@@ -136,7 +136,6 @@ public class OkBleClient {
 
             @Override
             public void onOkBleCharacteristicRead(BluetoothGatt gatt, SingleEmitter<OkBleCharacteristic> emitter, BluetoothGattCharacteristic characteristic, byte[] value, int status) {
-                super.onCharacteristicRead(gatt, characteristic, value, status);
                 if (status != BluetoothGatt.GATT_SUCCESS) return;
                 if (emitter != null && !emitter.isDisposed()) {
                     emitter.onSuccess(new OkBleCharacteristic(characteristic, value, System.currentTimeMillis()));
@@ -145,7 +144,6 @@ public class OkBleClient {
 
             @Override
             public void onOkBleCharacteristicWrite(BluetoothGatt gatt, SingleEmitter<BluetoothGattCharacteristic> emitter, BluetoothGattCharacteristic characteristic, int status) {
-                super.onCharacteristicWrite(gatt, characteristic, status);
                 if (status != BluetoothGatt.GATT_SUCCESS) return;
                 if (emitter == null) return;
                 if (!emitter.isDisposed()) {
@@ -162,9 +160,7 @@ public class OkBleClient {
 
             /**
              * notify
-             * @param gatt
              * @param characteristic
-             * @param value
              */
             @Override
             public void onOkBleCharacteristicChanged(@androidx.annotation.NonNull BluetoothGatt gatt, ObservableEmitter<OkBleCharacteristic> emitter, @androidx.annotation.NonNull BluetoothGattCharacteristic characteristic, @androidx.annotation.NonNull byte[] value) {
