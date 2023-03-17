@@ -2,9 +2,7 @@ package io.okandroid.bluetooth.le.service;
 
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
-import android.util.Log;
 
-import java.util.Hashtable;
 import java.util.UUID;
 
 import io.okandroid.OkAndroid;
@@ -15,15 +13,14 @@ import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.Observer;
 import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.core.SingleSource;
 import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public abstract class AbstractService {
     protected OkBleClient client;
     protected String serviceName;
-
-    private Hashtable<UUID, Disposable> disposes = new Hashtable<>();
-
+    
     public AbstractService(String serviceName, OkBleClient client) {
         this.serviceName = serviceName;
         this.client = client;
@@ -31,98 +28,23 @@ public abstract class AbstractService {
 
 
     protected <T> Single<T> writeOnce(UUID serviceUUID, UUID characteristicUUID, byte[] data, int writeType, CharacteristicValueTaker<T> characteristicValueTaker) {
-        return Single.create(emitter -> {
-            if (!client.isConnected()) {
-                emitter.onError(new OkBluetoothException("BLE device is not connected."));
-                return;
+        return client.writeCharacteristic(serviceUUID, characteristicUUID, data, writeType).flatMap(characteristic -> (SingleSource<T>) observer -> {
+            if (characteristic != null) {
+                observer.onSuccess(characteristicValueTaker.takeValue(characteristic)); // hex byte array.
+            } else {
+                observer.onError(new OkBluetoothException(String.format("BLE device characteristic write fail, detail: %s / %s", serviceName, characteristicUUID)));
             }
-            BluetoothGattCharacteristic characteristic_ = client.getCharacteristic(serviceUUID, characteristicUUID);
-            if (characteristic_ == null) {
-                emitter.onError(new OkBluetoothException(String.format("BLE device not support: [READ] %s / %s", serviceName, characteristicUUID)));
-                return;
-            }
-            Disposable thisDispose = client.writeCharacteristic(characteristic_, data, writeType).observeOn(OkAndroid.mainThread()).subscribeOn(Schedulers.io()).subscribe(characteristic -> {
-                if (characteristic == null) return;
-                if (emitter != null && !emitter.isDisposed()) {
-                    emitter.onSuccess(characteristicValueTaker.takeValue(characteristic)); // hex byte array.
-                    Disposable disposable = disposes.get(characteristicUUID);
-                    if (disposable != null) {
-                        disposable.dispose();
-                        disposes.remove(characteristicUUID);
-                    }
-                }
-            });
-            disposes.put(characteristicUUID, thisDispose);
         });
     }
 
-    protected <T> Single<T> readOnce(UUID serviceUUID, UUID characteristicUUID, CharacteristicValueTaker<T> characteristicValueTaker) {
-        return Single.create(emitter -> {
-            if (!client.isConnected()) {
-                emitter.onError(new OkBluetoothException("BLE device is not connected."));
-                return;
+    protected @NonNull <T> Single<T> readOnce(UUID serviceUUID, UUID characteristicUUID, CharacteristicValueTaker<T> characteristicValueTaker) {
+        return client.readCharacteristic(serviceUUID, characteristicUUID).flatMap(okBleCharacteristic -> (SingleSource<T>) observer -> {
+            BluetoothGattCharacteristic characteristic = okBleCharacteristic.getCharacteristic();
+            if (characteristic != null) {
+                observer.onSuccess(characteristicValueTaker.takeValue(characteristic));
+            } else {
+                observer.onError(new OkBluetoothException(String.format("BLE device characteristic read fail, detail: %s / %s", serviceName, characteristicUUID)));
             }
-            BluetoothGattCharacteristic characteristic_ = client.getCharacteristic(serviceUUID, characteristicUUID);
-            if (characteristic_ == null) {
-                emitter.onError(new OkBluetoothException(String.format("BLE device not support: [READ] %s / %s", serviceName, characteristicUUID)));
-                return;
-            }
-            Disposable thisDispose = client.readCharacteristic(characteristic_).observeOn(OkAndroid.mainThread()).subscribeOn(Schedulers.io()).subscribe(okBleCharacteristic -> {
-                BluetoothGattCharacteristic characteristic = okBleCharacteristic.getCharacteristic();
-                if (characteristic == null) return;
-                if (emitter != null && !emitter.isDisposed()) {
-                    emitter.onSuccess(characteristicValueTaker.takeValue(characteristic)); // hex byte array.
-                    Disposable disposable = disposes.get(characteristicUUID);
-                    if (disposable != null) {
-                        disposable.dispose();
-                        disposes.remove(characteristicUUID);
-                    }
-                }
-            });
-            disposes.put(characteristicUUID, thisDispose);
-        });
-    }
-
-    protected <T> Observable<T> readMulti(UUID serviceUUID, UUID characteristicUUID, CharacteristicValueTaker<T> characteristicValueTaker) {
-        return Observable.create(emitter -> {
-            if (!client.isConnected()) {
-                emitter.onError(new OkBluetoothException("BLE device is not connected."));
-                return;
-            }
-            BluetoothGattCharacteristic characteristic = client.getCharacteristic(serviceUUID, characteristicUUID);
-            if (characteristic == null) {
-                emitter.onError(new OkBluetoothException(String.format("BLE device not support: [READ] %s / %s", serviceName, characteristicUUID)));
-                return;
-            }
-            client.readCharacteristic(characteristic).observeOn(OkAndroid.mainThread()).subscribeOn(Schedulers.io()).subscribe(new Observer<OkBleCharacteristic>() {
-                @Override
-                public void onSubscribe(@NonNull Disposable d) {
-
-                }
-
-                @Override
-                public void onNext(@NonNull OkBleCharacteristic okBleCharacteristic) {
-                    BluetoothGattCharacteristic characteristic = okBleCharacteristic.getCharacteristic();
-                    if (characteristic == null) return;
-                    if (emitter != null && !emitter.isDisposed()) {
-                        emitter.onNext(characteristicValueTaker.takeValue(characteristic)); // hex byte array.
-                    }
-                }
-
-                @Override
-                public void onError(@NonNull Throwable e) {
-                    if (emitter != null && !emitter.isDisposed()) {
-                        emitter.onError(e);
-                    }
-                }
-
-                @Override
-                public void onComplete() {
-                    if (emitter != null && !emitter.isDisposed()) {
-                        emitter.onComplete();
-                    }
-                }
-            });
         });
     }
 

@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
@@ -17,7 +16,6 @@ import android.os.Build;
 
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Stack;
 import java.util.UUID;
 
 import io.okandroid.bluetooth.OkBluetoothException;
@@ -28,6 +26,9 @@ import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.core.SingleEmitter;
 import io.reactivex.rxjava3.core.SingleOnSubscribe;
 
+/**
+ * 低功耗蓝牙 Client
+ */
 public class OkBleClient {
 
     private Context context;
@@ -40,8 +41,8 @@ public class OkBleClient {
 
     // emitters
     private ObservableEmitter<ConnectionStatus> connectionEmitter;
-    private Hashtable<BluetoothGattCharacteristic, ObservableEmitter<OkBleCharacteristic>> readCharacteristicEmitterMap = new Hashtable<>();
-    private SingleEmitter<BluetoothGattCharacteristic> writeCharacteristicEmitter;
+    private Hashtable<BluetoothGattCharacteristic, SingleEmitter<OkBleCharacteristic>> readCharacteristicEmitterMap = new Hashtable<>();
+    private Hashtable<BluetoothGattCharacteristic, SingleEmitter<BluetoothGattCharacteristic>> writeCharacteristicEmitterMap = new Hashtable<>();
     private ObservableEmitter<OkBleDescriptor> readDescriptorEmitter;
     private ObservableEmitter<BluetoothGattDescriptor> writeDescriptorEmitter;
     private ObservableEmitter<List<BluetoothGattService>> serviceDiscoverEmitter;
@@ -139,22 +140,14 @@ public class OkBleClient {
             }
 
             @Override
-            public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-                super.onCharacteristicRead(gatt, characteristic, status);
-                if (status != BluetoothGatt.GATT_SUCCESS) return;
-                ObservableEmitter<OkBleCharacteristic> emitter = readCharacteristicEmitterMap.get(characteristic);
-                if (emitter != null && !emitter.isDisposed()) {
-                    emitter.onNext(new OkBleCharacteristic(characteristic, characteristic.getValue(), System.currentTimeMillis()));
-                }
-            }
-
-            @Override
-            public void onCharacteristicRead(@androidx.annotation.NonNull BluetoothGatt gatt, @androidx.annotation.NonNull BluetoothGattCharacteristic characteristic, @androidx.annotation.NonNull byte[] value, int status) {
+            public void onOkBleCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, byte[] value, int status) {
                 super.onCharacteristicRead(gatt, characteristic, value, status);
                 if (status != BluetoothGatt.GATT_SUCCESS) return;
-                ObservableEmitter<OkBleCharacteristic> emitter = readCharacteristicEmitterMap.get(characteristic);
-                if (emitter != null && !emitter.isDisposed()) {
-                    emitter.onNext(new OkBleCharacteristic(characteristic, value, System.currentTimeMillis()));
+                SingleEmitter<OkBleCharacteristic> emitter = readCharacteristicEmitterMap.get(characteristic);
+                if (emitter == null) return;
+                readCharacteristicEmitterMap.remove(characteristic);
+                if (!emitter.isDisposed()) {
+                    emitter.onSuccess(new OkBleCharacteristic(characteristic, value, System.currentTimeMillis()));
                 }
             }
 
@@ -162,8 +155,11 @@ public class OkBleClient {
             public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
                 super.onCharacteristicWrite(gatt, characteristic, status);
                 if (status != BluetoothGatt.GATT_SUCCESS) return;
-                if (writeCharacteristicEmitter != null && !writeCharacteristicEmitter.isDisposed()) {
-                    writeCharacteristicEmitter.onSuccess(characteristic);
+                SingleEmitter<BluetoothGattCharacteristic> emitter = writeCharacteristicEmitterMap.get(characteristic);
+                if (emitter == null) return;
+                writeCharacteristicEmitterMap.remove(characteristic);
+                if (!emitter.isDisposed()) {
+                    emitter.onSuccess(characteristic);
                 }
             }
 
@@ -171,9 +167,7 @@ public class OkBleClient {
             public void onReliableWriteCompleted(BluetoothGatt gatt, int status) {
                 super.onReliableWriteCompleted(gatt, status);
                 if (status != BluetoothGatt.GATT_SUCCESS) return;
-                if (writeCharacteristicEmitter != null && !writeCharacteristicEmitter.isDisposed()) {
-                    // writeCharacteristicEmitter.onComplete(); // TODO!
-                }
+                // TODO! after: gatt.executeReliableWrite()
             }
 
             /**
@@ -193,7 +187,7 @@ public class OkBleClient {
             }
 
             @Override
-            public void onDescriptorRead(@androidx.annotation.NonNull BluetoothGatt gatt, @androidx.annotation.NonNull BluetoothGattDescriptor descriptor, int status, @androidx.annotation.NonNull byte[] value) {
+            public void onOkBleDescriptorRead(@androidx.annotation.NonNull BluetoothGatt gatt, @androidx.annotation.NonNull BluetoothGattDescriptor descriptor, int status, @androidx.annotation.NonNull byte[] value) {
                 super.onDescriptorRead(gatt, descriptor, status, value);
                 if (status != BluetoothGatt.GATT_SUCCESS) return;
                 if (readDescriptorEmitter != null && !readDescriptorEmitter.isDisposed()) {
@@ -352,20 +346,36 @@ public class OkBleClient {
         });
     }
 
+    public Single<BluetoothGattCharacteristic> writeCharacteristic(BluetoothGattCharacteristic characteristic, byte[] data, int writeType) {
+        return writeCharacteristic(characteristic, null, null, data, writeType);
+    }
+
+    public Single<BluetoothGattCharacteristic> writeCharacteristic(UUID serviceUUID, UUID characteristicUUID, byte[] data, int writeType) {
+        return writeCharacteristic(null, serviceUUID, characteristicUUID, data, writeType);
+    }
+
     // @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
     @SuppressLint("MissingPermission")
-    public Single<BluetoothGattCharacteristic> writeCharacteristic(BluetoothGattCharacteristic characteristic, byte[] data, int writeType) {
+    private Single<BluetoothGattCharacteristic> writeCharacteristic(final BluetoothGattCharacteristic characteristic, UUID serviceUUID, UUID characteristicUUID, byte[] data, int writeType) {
         return Single.create(emitter -> {
             if (!validGatt(emitter)) return;
+            BluetoothGattCharacteristic characteristic_ = characteristic;
+            if (characteristic_ == null) {
+                characteristic_ = this.getCharacteristic(serviceUUID, characteristicUUID);
+                if (characteristic_ == null) {
+                    emitter.onError(new OkBluetoothException(String.format("BLE device not support: [WRITE / Characteristic] %s / %s", serviceUUID, characteristicUUID)));
+                    return;
+                }
+            }
             int code = -1;
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                code = mBluetoothGatt.writeCharacteristic(characteristic, data, writeType);
+                code = mBluetoothGatt.writeCharacteristic(characteristic_, data, writeType);
             } else {
-                characteristic.setValue(data);
-                characteristic.setWriteType(writeType);
-                code = mBluetoothGatt.writeCharacteristic(characteristic) ? 0 : -1;
+                characteristic_.setValue(data);
+                characteristic_.setWriteType(writeType);
+                code = mBluetoothGatt.writeCharacteristic(characteristic_) ? 0 : -1;
             }
-            writeCharacteristicEmitter = emitter;
+            writeCharacteristicEmitterMap.put(characteristic_, emitter);
             if (emitter.isDisposed()) return;
             if (code != BluetoothStatusCodes.SUCCESS) {
                 emitter.onError(new OkBluetoothException.DeviceWriteException("Device write error.", code));
@@ -373,13 +383,30 @@ public class OkBleClient {
         });
     }
 
+    public Single<OkBleCharacteristic> readCharacteristic(BluetoothGattCharacteristic characteristic) {
+        return readCharacteristic(characteristic, null, null);
+    }
+
     @SuppressLint("MissingPermission")
-    public Observable<OkBleCharacteristic> readCharacteristic(BluetoothGattCharacteristic characteristic) {
-        return Observable.create(emitter -> {
+    public Single<OkBleCharacteristic> readCharacteristic(UUID serviceUUID, UUID characteristicUUID) {
+        return readCharacteristic(null, serviceUUID, characteristicUUID);
+    }
+
+    @SuppressLint("MissingPermission")
+    private Single<OkBleCharacteristic> readCharacteristic(final BluetoothGattCharacteristic characteristic, UUID serviceUUID, UUID characteristicUUID) {
+        return Single.create(emitter -> {
             if (!validGatt(emitter)) return;
-            readCharacteristicEmitterMap.put(characteristic, emitter);
+            BluetoothGattCharacteristic characteristic_ = characteristic;
+            if (characteristic_ == null) {
+                characteristic_ = this.getCharacteristic(serviceUUID, characteristicUUID);
+                if (characteristic_ == null) {
+                    emitter.onError(new OkBluetoothException(String.format("BLE device not support: [READ / Characteristic] %s / %s", serviceUUID, characteristicUUID)));
+                    return;
+                }
+            }
+            readCharacteristicEmitterMap.put(characteristic_, emitter);
             // mBluetoothGatt.readCharacteristic(characteristic);
-            gattCallback.readCharacteristic(characteristic); // stack 串行
+            gattCallback.readCharacteristic(characteristic_); // stack 串行
         });
     }
 
