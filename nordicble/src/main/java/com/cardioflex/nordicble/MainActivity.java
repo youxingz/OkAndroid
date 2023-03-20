@@ -14,6 +14,7 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 import io.okandroid.OkAndroid;
@@ -81,7 +82,8 @@ public class MainActivity extends AppCompatActivity {
     private void startServiceJob() {
         nordic52832.deviceName().subscribe(s -> Log.i(TAG, "DEVICE_NAME: " + s));
         nordic52832.appearance().subscribe(integer -> Log.i(TAG, "APPEARANCE: " + integer));
-        nordic52832.battery().subscribe(level -> Log.i(TAG, "BATTERY_LEVEL: " + level));
+        // nordic52832.battery().subscribe(level -> Log.i(TAG, "BATTERY_LEVEL: " + level));
+        nordic52832.currentWave().subscribe(ints -> System.out.println("WAVE:: " + Arrays.toString(ints)));
     }
 
     @RequiresApi(api = Build.VERSION_CODES.S)

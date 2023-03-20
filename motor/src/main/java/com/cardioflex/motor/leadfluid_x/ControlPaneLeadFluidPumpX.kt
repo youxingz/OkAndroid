@@ -11,6 +11,8 @@ import com.cardioflex.motor.utils.parseInt
 import com.google.android.material.snackbar.Snackbar
 import com.serotonin.modbus4j.ModbusMaster
 import com.serotonin.modbus4j.exception.ModbusTransportException
+import com.serotonin.modbus4j.msg.ReadHoldingRegistersRequest
+import com.serotonin.modbus4j.msg.WriteRegisterRequest
 import io.okandroid.OkAndroid
 import io.okandroid.sensor.motor.LeadFluidPumpQueued
 import io.okandroid.serial.SerialDevice
@@ -62,16 +64,40 @@ class ControlPaneLeadFluidPumpX(
     init {
         initModbus()
         initView()
+        initTestBtn()
     }
 
     private fun initModbus() {
         try {
             val modbus = Modbus(device)
             modbusMaster = modbus.master()
-            modbusMaster.retries = 3
+            modbusMaster.retries = 2
             motor = LeadFluidPumpQueued(modbus, slaveId)
         } catch (e: ModbusTransportException) {
 //            e.printStackTrace()
+        }
+    }
+
+    private fun initTestBtn() {
+        val btn10: Button = root.findViewById(R.id.button10)
+        val btn11: Button = root.findViewById(R.id.button11)
+        val btn20: Button = root.findViewById(R.id.button20)
+        val btn21: Button = root.findViewById(R.id.button21)
+        btn10.setOnClickListener { send(3101, 0) }
+        btn11.setOnClickListener { send(3101, 1) }
+        btn20.setOnClickListener { send(3102, 0) }
+        btn21.setOnClickListener { send(3102, 1) }
+    }
+
+    private fun send(address: Int, value: Int) {
+        try {
+            val request = WriteRegisterRequest(slaveId, address, value)
+            val response = modbusMaster.send(request)
+            if (response.isException) {
+                context.appendLog("[ERROR]" + response.exceptionMessage)
+            }
+        } catch (e: ModbusTransportException) {
+            e.localizedMessage?.let { context.appendLog(it) }
         }
     }
 

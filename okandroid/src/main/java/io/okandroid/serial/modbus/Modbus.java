@@ -82,9 +82,9 @@ public class Modbus {
         SingleEmitter<ModbusResponse> emitter = request.getEmitter();
         ModbusRequest modbusRequest = request.getRequest();
         try {
+            Thread.sleep(50);
             ModbusResponse response = modbusMaster.send(modbusRequest);
             // 间隔 50 ms 执行下一条指令
-            Thread.sleep(50);
             if (emitter != null && !emitter.isDisposed()) {
                 if (response.isException()) {
                     // exception

@@ -1,17 +1,19 @@
 package io.okandroid.cardioflex.pulsegen;
 
+import android.bluetooth.BluetoothGattCharacteristic;
 import android.content.Context;
+
+import java.util.List;
 
 import io.okandroid.OkAndroid;
 import io.okandroid.bluetooth.le.OkBleClient;
 import io.okandroid.bluetooth.le.service.BatteryService;
 import io.okandroid.bluetooth.le.service.DeviceInformationService;
 import io.okandroid.bluetooth.le.service.GenericAccessService;
+import io.okandroid.bluetooth.le.service.PulseGeneratorService;
 import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.core.Observer;
 import io.reactivex.rxjava3.core.Single;
-import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class Nordic52832 {
@@ -19,12 +21,14 @@ public class Nordic52832 {
     private BatteryService batteryService;
     private DeviceInformationService deviceInformationService;
     private GenericAccessService genericAccessService;
+    private PulseGeneratorService pulseGeneratorService;
 
     public Nordic52832(Context context, String macAddress) {
         this.client = new OkBleClient(context, macAddress);
         this.batteryService = new BatteryService(client);
         this.deviceInformationService = new DeviceInformationService(client);
         this.genericAccessService = new GenericAccessService(client);
+        this.pulseGeneratorService = new PulseGeneratorService(client);
     }
 
     public Observable<OkBleClient.ConnectionStatus> connect() {
@@ -119,5 +123,14 @@ public class Nordic52832 {
      */
     public Single<String> centralAddressResolution() {
         return genericAccessService.centralAddressResolution().subscribeOn(Schedulers.io()).observeOn(OkAndroid.mainThread());
+    }
+
+
+    public Observable<int[]> currentWave() {
+        return pulseGeneratorService.currentWave().subscribeOn(Schedulers.io()).observeOn(OkAndroid.mainThread());
+    }
+
+    public Single<List<BluetoothGattCharacteristic>> sendWave(List<PulseGeneratorService.WaveParam> waveParams) {
+        return pulseGeneratorService.sendWave(waveParams).subscribeOn(Schedulers.io()).observeOn(OkAndroid.mainThread());
     }
 }
