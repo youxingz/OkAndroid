@@ -119,16 +119,16 @@ public class PulseGeneratorService extends AbstractService {
         public byte[] toPayload(int total, int index) {
             byte[] data = new byte[length * 2 + 6];
             int id = type.getCode();
-            data[0] = (byte) ((id >> 8) & 0xFF);
+            data[0] = (byte) (id >> 8 & 0xFF);
             data[1] = (byte) (id & 0xFF);
-            data[2] = (byte) ((total >> 8) & 0xFF);
+            data[2] = (byte) (total >> 8 & 0xFF);
             data[3] = (byte) (total & 0xFF);
-            data[4] = (byte) ((index >> 8) & 0xFF);
+            data[4] = (byte) (index >> 8 & 0xFF);
             data[5] = (byte) (index & 0xFF);
             // params:
             for (int i = 0; i < length; i++) {
                 int param = params[i];
-                data[6 + 2 * i] = (byte) ((param >> 8) & 0xFF);
+                data[6 + 2 * i] = (byte) (param >> 8 & 0xFF);
                 data[6 + 2 * i + 1] = (byte) (param & 0xFF);
             }
             return data;

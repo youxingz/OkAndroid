@@ -11,7 +11,6 @@ import com.cardioflex.motor.utils.parseInt
 import com.google.android.material.snackbar.Snackbar
 import com.serotonin.modbus4j.ModbusMaster
 import com.serotonin.modbus4j.exception.ModbusTransportException
-import com.serotonin.modbus4j.msg.ReadHoldingRegistersRequest
 import com.serotonin.modbus4j.msg.WriteRegisterRequest
 import io.okandroid.OkAndroid
 import io.okandroid.sensor.motor.LeadFluidPumpQueued
@@ -26,7 +25,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers
 class ControlPaneLeadFluidPumpX(
     private val context: LeadFluidActivityX,
     private val device: SerialDevice,
-    private val slaveId: Int
+    private var slaveId: Int
 ) : LinearLayout(context) {
 
     private lateinit var motor: LeadFluidPumpQueued
@@ -50,6 +49,10 @@ class ControlPaneLeadFluidPumpX(
     private lateinit var clearDirectionToggle: ToggleButton
     private lateinit var clearToggle: ToggleButton
 
+    // address
+    private lateinit var addressField: EditText
+    private lateinit var addressBtn: Button
+
     private lateinit var root: View
 
     private var disposableVelocity: Disposable? = null
@@ -64,7 +67,7 @@ class ControlPaneLeadFluidPumpX(
     init {
         initModbus()
         initView()
-        initTestBtn()
+//        initTestBtn()
     }
 
     private fun initModbus() {
@@ -78,28 +81,77 @@ class ControlPaneLeadFluidPumpX(
         }
     }
 
-    private fun initTestBtn() {
-        val btn10: Button = root.findViewById(R.id.button10)
-        val btn11: Button = root.findViewById(R.id.button11)
-        val btn20: Button = root.findViewById(R.id.button20)
-        val btn21: Button = root.findViewById(R.id.button21)
-        btn10.setOnClickListener { send(3101, 0) }
-        btn11.setOnClickListener { send(3101, 1) }
-        btn20.setOnClickListener { send(3102, 0) }
-        btn21.setOnClickListener { send(3102, 1) }
+//    private fun initTestBtn() {
+//        root.findViewById<Button>(R.id.button10).setOnClickListener { send(3101, 0) }
+//        root.findViewById<Button>(R.id.button11).setOnClickListener { send(3101, 1) }
+//        root.findViewById<Button>(R.id.button20).setOnClickListener { send(3102, 0) }
+//        root.findViewById<Button>(R.id.button21).setOnClickListener { send(3102, 1) }
+//
+//        root.findViewById<Button>(R.id.buttonS0).setOnClickListener { send(3100, 0) }
+//        root.findViewById<Button>(R.id.buttonS200).setOnClickListener { send(3100, 2000) }
+//        root.findViewById<Button>(R.id.buttonS300).setOnClickListener { send(3100, 3000) }
+//
+//        root.findViewById<Button>(R.id.buttonT1)
+//            .setOnClickListener { send(3100, 1234, 3101, 0) }
+//        root.findViewById<Button>(R.id.buttonT2)
+//            .setOnClickListener { send(3100, 2345, 3101, 1) }
+//        root.findViewById<Button>(R.id.buttonT3)
+//            .setOnClickListener { send(3101, 0, 3100, 2345) }
+//        root.findViewById<Button>(R.id.buttonT4)
+//            .setOnClickListener { send(3101, 1, 3100, 4567) }
+//
+//        root.findViewById<Button>(R.id.buttonC1).setOnClickListener {
+//            motor.directionAndVelocity(222, 0).observeOn(OkAndroid.mainThread())
+//                .subscribeOn(OkAndroid.subscribeIOThread()).subscribe({
+//                    Snackbar.make(
+//                        this, "success", 0
+//                    ).show()
+//                }, { e ->
+//                    e.printStackTrace()
+//                })
+//        }
+//        root.findViewById<Button>(R.id.buttonC2).setOnClickListener {
+//            motor.directionAndVelocity(333, 1).observeOn(OkAndroid.mainThread())
+//                .subscribeOn(OkAndroid.subscribeIOThread()).subscribe({
+//                    Snackbar.make(
+//                        this, "success", 0
+//                    ).show()
+//                }, { e ->
+//                    e.printStackTrace()
+//                })
+//        }
+//    }
+
+    private fun send(address1: Int, value1: Int, address2: Int, value2: Int) {
+        OkAndroid.newThread().scheduleDirect {
+            send_impl(address1, value1)
+            send_impl(address2, value2)
+        }
     }
 
     private fun send(address: Int, value: Int) {
+        OkAndroid.newThread().scheduleDirect {
+            send_impl(address, value)
+        }
+    }
+
+    private fun send_impl(address: Int, value: Int) {
         try {
             val request = WriteRegisterRequest(slaveId, address, value)
             val response = modbusMaster.send(request)
             if (response.isException) {
-                context.appendLog("[ERROR]" + response.exceptionMessage)
+                OkAndroid.mainThread().scheduleDirect {
+                    context.appendLog("[ERROR]" + response.exceptionMessage)
+                }
             }
         } catch (e: ModbusTransportException) {
-            e.localizedMessage?.let { context.appendLog(it) }
+            OkAndroid.mainThread().scheduleDirect {
+                e.localizedMessage?.let { context.appendLog(it) }
+            }
         }
     }
+
+    private var disposable: Disposable? = null
 
     @SuppressLint("ResourceType")
     private fun initView() {
@@ -121,6 +173,10 @@ class ControlPaneLeadFluidPumpX(
         // clear
         clearDirectionToggle = root.findViewById(R.id.direction_btn_clear)
         clearToggle = root.findViewById(R.id.clear_btn)
+        // address
+        addressBtn = root.findViewById(R.id.btn_set_address)
+        addressField = root.findViewById(R.id.address_edit)
+        addressField.setText("$slaveId")
 
         val filename = device.device.name
         titleText.text = "蠕动泵【${slaveId}号 | 串口：$filename】"
@@ -136,20 +192,27 @@ class ControlPaneLeadFluidPumpX(
                         this, "【蠕动泵 $slaveId 号】${if (isChecked) "启动" else "急停"}成功", 0
                     ).show()
                 }, { e ->
+                    Snackbar.make(
+                        this, "【蠕动泵 $slaveId 号】${if (isChecked) "启动" else "急停"}失败", 0
+                    ).show()
+                    isExceptionInWorking = true
+                    btnTurn.isChecked = false
+                    working = false
                     e.printStackTrace()
                 })
             working = isChecked
             // loop in thread
             if (isChecked) {
-                Schedulers.newThread().createWorker().schedule {
+                disposable?.dispose()
+                disposable = Schedulers.newThread().createWorker().schedule {
                     loop()
                     // make false
-                    OkAndroid.mainThread().createWorker().schedule {
-                        isExceptionInWorking = true
-                        btnTurn.isChecked = false
-//                        modbusMaster.destroy()
-//                        initModbus()
-                    }
+//                    OkAndroid.mainThread().createWorker().schedule {
+//                        isExceptionInWorking = true
+//                        btnTurn.isChecked = false
+////                        modbusMaster.destroy()
+////                        initModbus()
+//                    }
                 }
             }
         }
@@ -194,7 +257,7 @@ class ControlPaneLeadFluidPumpX(
         clearToggle.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
                 val direction = if (clearDirectionToggle.isChecked) 0 else 1
-                setPeriodItem("-", 200, direction)
+                setPeriodItem("-", 200, direction, 0)
             }
             try {
                 if (isExceptionInClearing) {
@@ -227,14 +290,36 @@ class ControlPaneLeadFluidPumpX(
         }
         clearDirectionToggle.setOnCheckedChangeListener { _, isChecked ->
             val direction = if (isChecked) 0 else 1
-            setPeriodItem("-", 200, direction)
+            setPeriodItem("-", 200, direction, 0)
+        }
+
+        // address
+        addressBtn.setOnClickListener {
+            val addressId = parseInt(addressField.text.toString())
+            this.slaveId = addressId
+            motor.address(addressId).observeOn(OkAndroid.mainThread())
+                .subscribeOn(OkAndroid.subscribeIOThread())
+                .subscribe({
+                    motor.address().observeOn(OkAndroid.mainThread())
+                        .subscribeOn(OkAndroid.subscribeIOThread()).subscribe({
+                            Snackbar.make(
+                                this,
+                                "蠕动泵地址修改成功【新地址：$it 号】，请重启蠕动泵",
+                                0
+                            ).show()
+                            motor.setSlaveId(addressId)
+                        }, { e -> e.localizedMessage?.let { context.appendLog(it) } })
+                }, { e ->
+                    e.printStackTrace()
+                    e.localizedMessage?.let { context.appendLog(it) }
+                })
         }
     }
 
 
     @SuppressLint("CheckResult")
     private fun loop() {
-        while (working) {
+        if (working) {
 //            var success: Boolean
             val speed1 = parseInt(velocityEdit1.text.toString())
             val time1 = parseInt(timeEdit1.text.toString())
@@ -243,20 +328,43 @@ class ControlPaneLeadFluidPumpX(
             val time2 = parseInt(timeEdit2.text.toString())
             val direction2 = if (directionToggle2.isChecked) 0 else 1
 
-            setPeriodItem("1", speed1, direction1)
-            Thread.sleep(time1.toLong())
-            setPeriodItem("2", speed2, direction2)
-            Thread.sleep(time2.toLong())
-
-//            Single.concat(
-//                motor.direction(direction1),
-//                motor.velocity(speed1 * 10)
-//            ).observeOn(OkAndroid.mainThread()).subscribeOn(OkAndroid.subscribeIOThread())
-//                .subscribe({
-//                    val log = "[1]: $speed1 rpm, $time1 ms"
-//                    Log.i("WORKING", log)
+            setPeriodItem("1", speed1, direction1, time1.toLong()).subscribe({
+                if (it is Int) {
+                    return@subscribe
+                }
+                if (it is IntArray) {
+                    val log =
+                        "[1]: ${if (direction1 == 0) "顺时针" else "逆时针"} ($direction1) | $speed1 rpm"
+                    Log.i("WORKING", log)
 //                    context.appendLog("RUNNING: $log")
-//                }, { e -> e.printStackTrace() })
+                    setPeriodItem("2", speed2, direction2, time2.toLong()).subscribe({
+                        if (it is Int) {
+                            return@subscribe
+                        }
+                        if (it is IntArray) {
+                            val log =
+                                "[2]: ${if (direction2 == 0) "顺时针" else "逆时针"} ($direction2) | $speed2 rpm"
+                            Log.i("WORKING", log)
+//                            context.appendLog("RUNNING: $log")
+                            // loop
+                            loop()
+                        }
+                    }, { e ->
+                        e.localizedMessage?.let { context.appendLog(it) }
+                        e.printStackTrace()
+                        isExceptionInWorking = true
+                        btnTurn.isChecked = false
+                    })
+                }
+            }, { e ->
+                e.localizedMessage?.let { context.appendLog(it) }
+                e.printStackTrace()
+                isExceptionInWorking = true
+                btnTurn.isChecked = false
+            })
+//            Thread.sleep(time1.toLong())
+//            Thread.sleep(time2.toLong())
+
 //            Thread.sleep(time1.toLong())
 //            Single.concat(
 //                motor.direction(direction2),
@@ -287,37 +395,19 @@ class ControlPaneLeadFluidPumpX(
 
     // - direction: 1: 逆, 0: 顺
     @SuppressLint("CheckResult")
-    private fun setPeriodItem(tag: String, speed: Int, direction: Int) {
-//        Single.concat(motor.direction(direction), motor.velocity(speed * 10))
-//            .observeOn(OkAndroid.mainThread())
-//            .subscribeOn(OkAndroid.subscribeIOThread())
-//            .subscribe({
-//                val log = "[$tag]: $speed rpm, ${if (direction == 0) "顺时针" else "逆时针"}"
-//                Log.i("WORKING", log)
-//                context.appendLog("RUNNING: $log")
-//            }, { e -> e.printStackTrace() })
-
-        motor.direction(direction).subscribeOn(Schedulers.io())
-            .observeOn(OkAndroid.mainThread()).subscribe({
-                val log = "[$tag]: $speed rpm"
-                Log.i("WORKING", log)
-                context.appendLog("RUNNING: $log")
-            }, {
-//                it.printStackTrace()
-                working = false
-            })
-//        if (!working) return false
-        motor.velocity(speed * 10).subscribeOn(Schedulers.io())
+    private fun setPeriodItem(
+        tag: String,
+        speed: Int,
+        direction: Int,
+        time: Long
+    ): Flowable<java.io.Serializable> {
+        return Single.concat(
+            motor.waitCommand(time),
+            motor.directionAndVelocity(speed * 10, direction)
+        )
+//        motor.directionAndVelocity(speed * 10, direction)
             .observeOn(OkAndroid.mainThread())
-            .subscribe({
-                val log = "[$tag]${if (direction == 0) "顺时针" else "逆时针"} ($direction)"
-                Log.i("WORKING", log)
-                context.appendLog("RUNNING: $log")
-            }, { e ->
-//                e.printStackTrace()
-                e.localizedMessage?.let { context.appendLog(it) }
-                working = false
-            })
+            .subscribeOn(OkAndroid.subscribeIOThread())
     }
 
     private fun wait(time: Long): Single<Any> {

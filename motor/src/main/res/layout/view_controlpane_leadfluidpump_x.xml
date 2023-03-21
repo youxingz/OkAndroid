@@ -10,34 +10,126 @@
     android:padding="12dp">
 
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+    <!--    <LinearLayout-->
+    <!--        android:layout_width="match_parent"-->
+    <!--        android:layout_height="wrap_content">-->
 
-        <Button
-            android:id="@+id/button10"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="3101-0" />
+    <!--        <Button-->
+    <!--            android:id="@+id/button10"-->
+    <!--            android:layout_width="wrap_content"-->
+    <!--            android:layout_height="wrap_content"-->
+    <!--            android:textSize="10dp"-->
+    <!--            android:text="3101-0(逆)" />-->
 
-        <Button
-            android:id="@+id/button11"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="3101-1" />
+    <!--        <Button-->
+    <!--            android:id="@+id/button11"-->
+    <!--            android:layout_width="wrap_content"-->
+    <!--            android:layout_height="wrap_content"-->
+    <!--            android:textSize="10dp"-->
+    <!--            android:text="3101-1(顺)" />-->
 
-        <Button
-            android:id="@+id/button20"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="3102-0" />
+    <!--        <Button-->
+    <!--            android:id="@+id/button20"-->
+    <!--            android:layout_width="wrap_content"-->
+    <!--            android:layout_height="wrap_content"-->
+    <!--            android:textSize="10dp"-->
+    <!--            android:text="3102-0(停)" />-->
 
-        <Button
-            android:id="@+id/button21"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="3102-1" />
-    </LinearLayout>
+    <!--        <Button-->
+    <!--            android:id="@+id/button21"-->
+    <!--            android:layout_width="wrap_content"-->
+    <!--            android:layout_height="wrap_content"-->
+    <!--            android:textSize="10dp"-->
+    <!--            android:text="3102-1(启)" />-->
+    <!--    </LinearLayout>-->
+
+
+    <!--    <LinearLayout-->
+    <!--        android:layout_width="match_parent"-->
+    <!--        android:layout_height="wrap_content">-->
+
+    <!--        <Button-->
+    <!--            android:id="@+id/buttonS0"-->
+    <!--            android:layout_width="wrap_content"-->
+    <!--            android:layout_height="wrap_content"-->
+    <!--            android:textSize="10dp"-->
+    <!--            android:text="Speed 0" />-->
+
+    <!--        <Button-->
+    <!--            android:id="@+id/buttonS200"-->
+    <!--            android:layout_width="wrap_content"-->
+    <!--            android:layout_height="wrap_content"-->
+    <!--            android:textSize="10dp"-->
+    <!--            android:text="Speed200" />-->
+
+    <!--        <Button-->
+    <!--            android:id="@+id/buttonS300"-->
+    <!--            android:layout_width="wrap_content"-->
+    <!--            android:layout_height="wrap_content"-->
+    <!--            android:textSize="10dp"-->
+    <!--            android:text="Speed300" />-->
+
+    <!--        <Button-->
+    <!--            android:id="@+id/buttonS400"-->
+    <!--            android:layout_width="wrap_content"-->
+    <!--            android:layout_height="wrap_content"-->
+    <!--            android:textSize="10dp"-->
+    <!--            android:text="Speed400" />-->
+
+    <!--    </LinearLayout>-->
+
+    <!--    <LinearLayout-->
+    <!--        android:layout_width="match_parent"-->
+    <!--        android:layout_height="wrap_content">-->
+
+    <!--        <Button-->
+    <!--            android:id="@+id/buttonT1"-->
+    <!--            android:layout_width="wrap_content"-->
+    <!--            android:layout_height="wrap_content"-->
+    <!--            android:textSize="10dp"-->
+    <!--            android:text="RPM+逆" />-->
+
+    <!--        <Button-->
+    <!--            android:id="@+id/buttonT2"-->
+    <!--            android:layout_width="wrap_content"-->
+    <!--            android:layout_height="wrap_content"-->
+    <!--            android:textSize="10dp"-->
+    <!--            android:text="RPM+顺" />-->
+
+    <!--        <Button-->
+    <!--            android:id="@+id/buttonT3"-->
+    <!--            android:layout_width="wrap_content"-->
+    <!--            android:layout_height="wrap_content"-->
+    <!--            android:textSize="10dp"-->
+    <!--            android:text="逆+RPM" />-->
+
+    <!--        <Button-->
+    <!--            android:id="@+id/buttonT4"-->
+    <!--            android:layout_width="wrap_content"-->
+    <!--            android:layout_height="wrap_content"-->
+    <!--            android:textSize="10dp"-->
+    <!--            android:text="顺+RPM" />-->
+    <!--    </LinearLayout>-->
+
+    <!--    <LinearLayout-->
+    <!--        android:layout_width="match_parent"-->
+    <!--        android:layout_height="wrap_content">-->
+
+    <!--        <Button-->
+    <!--            android:id="@+id/buttonC1"-->
+    <!--            android:layout_width="wrap_content"-->
+    <!--            android:layout_height="wrap_content"-->
+    <!--            android:textSize="10dp"-->
+    <!--            android:text="RPM*逆" />-->
+
+    <!--        <Button-->
+    <!--            android:id="@+id/buttonC2"-->
+    <!--            android:layout_width="wrap_content"-->
+    <!--            android:layout_height="wrap_content"-->
+    <!--            android:textSize="10dp"-->
+    <!--            android:text="RPM*顺" />-->
+
+    <!--    </LinearLayout>-->
 
     <TextView
         android:id="@+id/title_text"
@@ -49,6 +141,79 @@
         android:textSize="18sp"
         android:textStyle="bold" />
 
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="6dp"
+            android:text="蠕动泵地址（1-247）" />
+
+        <EditText
+            android:id="@+id/address_edit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="30dp"
+            android:layout_marginLeft="6dp"
+            android:layout_marginRight="6dp"
+            android:digits="0123456789"
+            android:text="0"
+            android:textColor="@color/black" />
+
+        <Button
+            android:id="@+id/btn_set_address"
+            android:layout_width="160dp"
+            android:layout_height="40dp"
+            android:layout_marginLeft="12dp"
+            android:text="更新已连接设备地址"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1.5dp"
+        android:background="#eee" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="12dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=" 高速排水（200RPM）   "
+            android:textColor="@color/black" />
+
+        <ToggleButton
+            android:id="@+id/direction_btn_clear"
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="12dp"
+            android:textColor="#FF018786"
+            android:textOff="逆时针"
+            android:textOn="顺时针" />
+
+        <ToggleButton
+            android:id="@+id/clear_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textOff="已停止"
+            android:textOn="运行中" />
+
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1.5dp"
+        android:background="#eee" />
+
     <GridLayout
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
@@ -59,8 +224,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingTop="12dp">
+            android:orientation="horizontal">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -151,6 +315,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="12dp"
                 android:textColor="#FF018786"
+                android:checked="true"
                 android:textOff="逆时针"
                 android:textOn="顺时针" />
         </LinearLayout>
@@ -232,39 +397,4 @@
             android:textOn="运行中" />
     </LinearLayout>
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1.5dp"
-        android:background="#eee" />
-
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:layout_marginBottom="12dp"
-        android:orientation="horizontal">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text=" 高速排水（200RPM）   "
-            android:textColor="@color/black" />
-
-        <ToggleButton
-            android:id="@+id/direction_btn_clear"
-            android:layout_width="80dp"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="12dp"
-            android:textColor="#FF018786"
-            android:textOff="逆时针"
-            android:textOn="顺时针" />
-
-        <ToggleButton
-            android:id="@+id/clear_btn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textOff="已停止"
-            android:textOn="运行中" />
-
-    </LinearLayout>
 </LinearLayout>

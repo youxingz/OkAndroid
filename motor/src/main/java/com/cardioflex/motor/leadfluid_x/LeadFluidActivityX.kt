@@ -8,6 +8,7 @@ import android.widget.AdapterView.OnItemSelectedListener
 import androidx.appcompat.app.AppCompatActivity
 import com.cardioflex.motor.DeviceListAdapter
 import com.cardioflex.motor.R
+import com.cardioflex.motor.utils.parseInt
 import io.okandroid.serial.SerialDevice
 import java.io.File
 
@@ -15,6 +16,10 @@ class LeadFluidActivityX : AppCompatActivity() {
     private lateinit var adapter: DeviceListAdapter
     private lateinit var gridLayout: GridLayout
     private lateinit var logText: TextView
+    private lateinit var clearLogBtn: Button
+
+    private var device: SerialDevice? = null
+    private var slaveId: Int = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,7 +27,7 @@ class LeadFluidActivityX : AppCompatActivity() {
         title = "雷弗蠕动泵控制面板（BT/01S）"
         initViews()
         // default set:
-        updateDevice(File("/dev/ttyS8")) // default device
+        updateDevice(File("/dev/ttyS8"), slaveId) // default device
     }
 
     private fun initViews() {
@@ -30,6 +35,7 @@ class LeadFluidActivityX : AppCompatActivity() {
         val refreshBtn: Button = findViewById(R.id.refresh_device_btn)
         gridLayout = findViewById(R.id.control_container)
         logText = findViewById(R.id.log_text)
+        clearLogBtn = findViewById(R.id.clear_log_btn)
         refreshBtn.setOnClickListener {
             refreshDeviceList()
         }
@@ -43,7 +49,7 @@ class LeadFluidActivityX : AppCompatActivity() {
                 id: Long
             ) {
                 val device = adapter.getDevice(position)
-                updateDevice(device)
+                updateDevice(device, slaveId)
             }
 
             override fun onNothingSelected(parent: AdapterView<*>?) {
@@ -51,28 +57,19 @@ class LeadFluidActivityX : AppCompatActivity() {
             }
 
         }
+        clearLogBtn.setOnClickListener {
+            logText.text = ""
+        }
         // after all:
         refreshDeviceList()
     }
 
-    private fun updateDevice(deviceFile: File) {
+    private fun updateDevice(deviceFile: File, slaveId: Int) {
         try {
-            val device = SerialDevice.newBuilder(deviceFile, 9600)
+            device?.close()
+            device = SerialDevice.newBuilder(deviceFile, 9600)
                 .dataBits(8).parity(2).stopBits(1).build()
-            gridLayout.removeAllViews()
-//            for (index in IntArray(1) { it }) {
-//                val pane = ControlPaneLeadFluidPumpX(this, device, index + 1)
-//                val params = GridLayout.LayoutParams()
-//                params.columnSpec = GridLayout.spec(index % 2)
-//                params.rowSpec = GridLayout.spec(index / 2)
-//                gridLayout.addView(pane, params)
-//            }
-            // 1.
-            val pane1 = ControlPaneLeadFluidPumpX(this, device, 1)
-            val params1 = GridLayout.LayoutParams()
-            params1.columnSpec = GridLayout.spec(0)
-            params1.rowSpec = GridLayout.spec(0)
-            gridLayout.addView(pane1, params1)
+            updateSlaveId()
             // 2.
 //            val pane = ControlPaneLeadFluidPump(this, device, 1)
 //            val params = GridLayout.LayoutParams()
@@ -83,6 +80,23 @@ class LeadFluidActivityX : AppCompatActivity() {
             e.printStackTrace()
             e.localizedMessage?.let { appendLog(it) }
         }
+    }
+
+    private fun updateSlaveId() {
+        gridLayout.removeAllViews()
+//            for (index in IntArray(1) { it }) {
+//                val pane = ControlPaneLeadFluidPumpX(this, device, index + 1)
+//                val params = GridLayout.LayoutParams()
+//                params.columnSpec = GridLayout.spec(index % 2)
+//                params.rowSpec = GridLayout.spec(index / 2)
+//                gridLayout.addView(pane, params)
+//            }
+        // 1.
+        val pane1 = ControlPaneLeadFluidPumpX(this, device!!, slaveId)
+        val params1 = GridLayout.LayoutParams()
+        params1.columnSpec = GridLayout.spec(0)
+        params1.rowSpec = GridLayout.spec(0)
+        gridLayout.addView(pane1, params1)
     }
 
     private fun refreshDeviceList() {
