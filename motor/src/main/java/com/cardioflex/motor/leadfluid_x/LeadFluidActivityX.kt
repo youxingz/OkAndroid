@@ -19,7 +19,6 @@ class LeadFluidActivityX : AppCompatActivity() {
     private lateinit var clearLogBtn: Button
 
     private var device: SerialDevice? = null
-    private var slaveId: Int = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,7 +26,7 @@ class LeadFluidActivityX : AppCompatActivity() {
         title = "雷弗蠕动泵控制面板（BT/01S）"
         initViews()
         // default set:
-        updateDevice(File("/dev/ttyS8"), slaveId) // default device
+        updateDevice(File("/dev/ttyS8")) // default device
     }
 
     private fun initViews() {
@@ -49,7 +48,7 @@ class LeadFluidActivityX : AppCompatActivity() {
                 id: Long
             ) {
                 val device = adapter.getDevice(position)
-                updateDevice(device, slaveId)
+                updateDevice(device)
             }
 
             override fun onNothingSelected(parent: AdapterView<*>?) {
@@ -64,7 +63,7 @@ class LeadFluidActivityX : AppCompatActivity() {
         refreshDeviceList()
     }
 
-    private fun updateDevice(deviceFile: File, slaveId: Int) {
+    private fun updateDevice(deviceFile: File) {
         try {
             device?.close()
             device = SerialDevice.newBuilder(deviceFile, 9600)
@@ -92,11 +91,13 @@ class LeadFluidActivityX : AppCompatActivity() {
 //                gridLayout.addView(pane, params)
 //            }
         // 1.
-        val pane1 = ControlPaneLeadFluidPumpX(this, device!!, slaveId)
-        val params1 = GridLayout.LayoutParams()
-        params1.columnSpec = GridLayout.spec(0)
-        params1.rowSpec = GridLayout.spec(0)
-        gridLayout.addView(pane1, params1)
+        for (index in IntArray(3) { it }) {
+            val pane1 = ControlPaneLeadFluidPumpX(this, device!!, index + 1)
+            val params1 = GridLayout.LayoutParams()
+            params1.columnSpec = GridLayout.spec(0)
+            params1.rowSpec = GridLayout.spec(index)
+            gridLayout.addView(pane1, params1)
+        }
     }
 
     private fun refreshDeviceList() {
