@@ -1,73 +1,33 @@
 package io.okandroid.serial.modbus;
 
 
-import com.serotonin.modbus4j.ModbusFactory;
 import com.serotonin.modbus4j.ModbusMaster;
 import com.serotonin.modbus4j.exception.ModbusTransportException;
 import com.serotonin.modbus4j.msg.ModbusRequest;
 import com.serotonin.modbus4j.msg.ModbusResponse;
-import com.serotonin.modbus4j.serial.SerialPortWrapper;
 
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import io.okandroid.exception.OkModbusException;
-import io.okandroid.serial.SerialDevice;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.core.SingleEmitter;
 
 public class Modbus {
-    private SerialDevice device;
+    // private SerialDevice device;
+    private String filename;
     private ModbusMaster modbusMaster;
 
     private Queue<OkModbusRequest> requestQueue = new LinkedBlockingQueue<>();
     private volatile boolean isWorking;
 
-    public Modbus(SerialDevice serialDevice) {
-        this.device = serialDevice;
-        this.modbusMaster = new ModbusFactory().createRtuMaster(new SerialPortWrapper() {
-            @Override
-            public void close() throws Exception {
-                device.close();
-            }
+    public Modbus(String filename, ModbusMaster master) {
+        this.filename = filename;
+        this.modbusMaster = master;
+    }
 
-            @Override
-            public void open() throws Exception {
-                device.open();
-            }
-
-            @Override
-            public InputStream getInputStream() {
-                return device.getInputStream();
-            }
-
-            @Override
-            public OutputStream getOutputStream() {
-                return device.getOutputStream();
-            }
-
-            @Override
-            public int getBaudRate() {
-                return device.getBaudRate();
-            }
-
-            @Override
-            public int getDataBits() {
-                return device.getDataBits();
-            }
-
-            @Override
-            public int getStopBits() {
-                return device.getStopBits();
-            }
-
-            @Override
-            public int getParity() {
-                return device.getParity();
-            }
-        });
+    public String getFilename() {
+        return filename;
     }
 
     private long lastUpdateAt = System.currentTimeMillis();

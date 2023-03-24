@@ -24,7 +24,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers
 
 class ControlPaneLeadFluidPumpX(
     private val context: LeadFluidActivityX,
-    private val device: SerialDevice,
+    private val modbus: Modbus,
     private var slaveId: Int
 ) : LinearLayout(context) {
 
@@ -72,7 +72,7 @@ class ControlPaneLeadFluidPumpX(
 
     private fun initModbus() {
         try {
-            val modbus = Modbus(device)
+//            val modbus = Modbus(device)
             modbusMaster = modbus.master()
             modbusMaster.retries = 2
             motor = LeadFluidPumpQueued(modbus, slaveId)
@@ -178,7 +178,8 @@ class ControlPaneLeadFluidPumpX(
         addressField = root.findViewById(R.id.address_edit)
         addressField.setText("$slaveId")
 
-        val filename = device.device.name
+//        val filename = device.device.name
+        val filename = modbus.filename
         titleText.text = "蠕动泵【${slaveId}号 | 串口：$filename】"
 
         btnTurn.setOnCheckedChangeListener { _, isChecked ->
@@ -257,7 +258,7 @@ class ControlPaneLeadFluidPumpX(
         clearToggle.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
                 val direction = if (clearDirectionToggle.isChecked) 0 else 1
-                setPeriodItem("-", 200, direction, 0)
+                setPeriodItem("-", 500, direction, 0)
             }
             try {
                 if (isExceptionInClearing) {
@@ -290,7 +291,7 @@ class ControlPaneLeadFluidPumpX(
         }
         clearDirectionToggle.setOnCheckedChangeListener { _, isChecked ->
             val direction = if (isChecked) 0 else 1
-            setPeriodItem("-", 200, direction, 0)
+            setPeriodItem("-", 500, direction, 0)
         }
 
         // address
@@ -319,15 +320,61 @@ class ControlPaneLeadFluidPumpX(
 
     @SuppressLint("CheckResult")
     private fun loop() {
+//        OkAndroid.newThread().createWorker().schedule {
+//            while (working) {
+////            var success: Boolean
+//                val speed1 = parseInt(velocityEdit1.text.toString())
+//                val time1 = parseInt(timeEdit1.text.toString())
+//                val direction1 = if (directionToggle1.isChecked) 0 else 1
+//                val speed2 = parseInt(velocityEdit2.text.toString())
+//                val time2 = parseInt(timeEdit2.text.toString())
+//                val direction2 = if (directionToggle2.isChecked) 0 else 1
+//
+//                Thread.sleep(time1.toLong())
+//                setPeriodItem("1", speed1, direction1, time1.toLong()).subscribe({
+//                    if (it is Int) {
+//                        return@subscribe
+//                    }
+//                    if (it is IntArray) {
+//                        val log =
+//                            "[1]: ${if (direction1 == 0) "顺时针" else "逆时针"} ($direction1) | $speed1 rpm"
+//                        Log.i("WORKING", log)
+////                    context.appendLog("RUNNING: $log")
+//
+//                    }
+//                }, { e ->
+//                    e.localizedMessage?.let { context.appendLog(it) }
+//                    e.printStackTrace()
+//                    isExceptionInWorking = true
+//                    btnTurn.isChecked = false
+//                })
+//                Thread.sleep(time2.toLong())
+//                setPeriodItem("2", speed2, direction2, time2.toLong()).subscribe({
+//                    if (it is Int) {
+//                        return@subscribe
+//                    }
+//                    if (it is IntArray) {
+//                        val log =
+//                            "[2]: ${if (direction2 == 0) "顺时针" else "逆时针"} ($direction2) | $speed2 rpm"
+//                        Log.i("WORKING", log)
+////                            context.appendLog("RUNNING: $log")
+//                        // loop
+////                        loop()
+//                    }
+//                }, { e ->
+//                    e.localizedMessage?.let { context.appendLog(it) }
+//                    e.printStackTrace()
+//                    isExceptionInWorking = true
+//                    btnTurn.isChecked = false
+//                })
+//            }
         if (working) {
-//            var success: Boolean
             val speed1 = parseInt(velocityEdit1.text.toString())
             val time1 = parseInt(timeEdit1.text.toString())
             val direction1 = if (directionToggle1.isChecked) 0 else 1
             val speed2 = parseInt(velocityEdit2.text.toString())
             val time2 = parseInt(timeEdit2.text.toString())
             val direction2 = if (directionToggle2.isChecked) 0 else 1
-
             setPeriodItem("1", speed1, direction1, time1.toLong()).subscribe({
                 if (it is Int) {
                     return@subscribe
@@ -362,34 +409,6 @@ class ControlPaneLeadFluidPumpX(
                 isExceptionInWorking = true
                 btnTurn.isChecked = false
             })
-//            Thread.sleep(time1.toLong())
-//            Thread.sleep(time2.toLong())
-
-//            Thread.sleep(time1.toLong())
-//            Single.concat(
-//                motor.direction(direction2),
-//                motor.velocity(speed2 * 10)
-//            ).observeOn(OkAndroid.mainThread()).subscribeOn(OkAndroid.subscribeIOThread())
-//                .subscribe({
-//                    val log = "[2]: $speed2 rpm, $time2 ms"
-//                    Log.i("WORKING", log)
-//                    context.appendLog("RUNNING: $log")
-//                    // done
-//                }, { e -> e.printStackTrace() })
-            // wait time2 ms.
-//            Thread.sleep(time2.toLong())
-//            Log.i("WORKING", "working1...: $speed1 rpm, $time1 ms")
-//            setPeriodItem(speed1, direction1)
-//            if (!success) {
-//                break
-//            }
-//            Thread.sleep(time1.toLong())
-//            Log.i("WORKING", "working2...: $speed2 rpm, $time2 ms")
-//            setPeriodItem(speed2, direction2)
-//            if (!success) {
-//                break
-//            }
-//            Thread.sleep(time2.toLong())
         }
     }
 
@@ -403,6 +422,7 @@ class ControlPaneLeadFluidPumpX(
     ): Flowable<java.io.Serializable> {
         return Single.concat(
             motor.waitCommand(time),
+//            motor.waitCommand(0), // 不做等待
             motor.directionAndVelocity(speed * 10, direction)
         )
 //        motor.directionAndVelocity(speed * 10, direction)

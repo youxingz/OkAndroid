@@ -13,6 +13,7 @@ import io.okandroid.sensor.motor.JieHengPeristalticPump
 import io.okandroid.sensor.motor.JieHengPeristalticPumpObservable
 import io.okandroid.serial.SerialDevice
 import io.okandroid.serial.modbus.Modbus
+import io.okandroid.serial.modbus.ModbusMasterCreator
 import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 
@@ -47,7 +48,7 @@ class ControlPanePump(
 
     private fun initModbus() {
         try {
-            val modbus = Modbus(device)
+            val modbus = Modbus(device.device.name, ModbusMasterCreator.create(device))
             val modbusMaster = modbus.master()
             modbusMaster.retries = 3
             pump = JieHengPeristalticPumpObservable(JieHengPeristalticPump(modbusMaster, slaveId))

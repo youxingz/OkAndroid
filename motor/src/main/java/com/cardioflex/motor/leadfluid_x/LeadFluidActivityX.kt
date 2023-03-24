@@ -10,6 +10,8 @@ import com.cardioflex.motor.DeviceListAdapter
 import com.cardioflex.motor.R
 import com.cardioflex.motor.utils.parseInt
 import io.okandroid.serial.SerialDevice
+import io.okandroid.serial.modbus.Modbus
+import io.okandroid.serial.modbus.ModbusMasterCreator
 import java.io.File
 
 class LeadFluidActivityX : AppCompatActivity() {
@@ -91,8 +93,10 @@ class LeadFluidActivityX : AppCompatActivity() {
 //                gridLayout.addView(pane, params)
 //            }
         // 1.
+        val modbusMaster = ModbusMasterCreator.create(device)
         for (index in IntArray(3) { it }) {
-            val pane1 = ControlPaneLeadFluidPumpX(this, device!!, index + 1)
+            val modbus = Modbus(device?.device?.name, modbusMaster)
+            val pane1 = ControlPaneLeadFluidPumpX(this, modbus, index + 1)
             val params1 = GridLayout.LayoutParams()
             params1.columnSpec = GridLayout.spec(0)
             params1.rowSpec = GridLayout.spec(index)
@@ -109,7 +113,7 @@ class LeadFluidActivityX : AppCompatActivity() {
     }
 
     fun appendLog(text: String) {
-        val log = "${System.currentTimeMillis()}\t$text\n"
+        val log = "${System.currentTimeMillis()}\t>>\t$text\n"
         logText.text = logText.text.toString() + log
     }
 }

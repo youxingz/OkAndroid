@@ -13,6 +13,7 @@ import io.okandroid.sensor.motor.LeadShinePr0
 import io.okandroid.sensor.motor.LeadShinePr0Observable
 import io.okandroid.serial.SerialDevice
 import io.okandroid.serial.modbus.Modbus
+import io.okandroid.serial.modbus.ModbusMasterCreator
 import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 
@@ -59,7 +60,7 @@ class ControlPaneLeadShineMotor(
 
     private fun initModbus() {
         try {
-            val modbus = Modbus(device)
+            val modbus = Modbus(device.device.name, ModbusMasterCreator.create(device))
             val modbusMaster = modbus.master()
             modbusMaster.retries = 3
             motor = LeadShinePr0Observable(LeadShinePr0(modbusMaster, slaveId))
