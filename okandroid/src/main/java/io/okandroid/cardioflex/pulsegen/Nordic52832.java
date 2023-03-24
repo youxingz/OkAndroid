@@ -42,7 +42,7 @@ public class Nordic52832 {
     }
 
     public void requestMtu() { // set 500 (>480=16*30)
-        client.setMtu(23).observeOn(OkAndroid.mainThread()).subscribeOn(Schedulers.io()).subscribe(new SingleObserver<Integer>() {
+        client.setMtu(30).observeOn(OkAndroid.mainThread()).subscribeOn(Schedulers.io()).subscribe(new SingleObserver<Integer>() {
             @Override
             public void onSubscribe(@NonNull Disposable d) {
 
@@ -50,7 +50,7 @@ public class Nordic52832 {
 
             @Override
             public void onSuccess(@NonNull Integer integer) {
-                
+
             }
 
             @Override

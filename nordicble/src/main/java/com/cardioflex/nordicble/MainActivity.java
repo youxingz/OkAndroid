@@ -1,6 +1,7 @@
 package com.cardioflex.nordicble;
 
 import android.Manifest;
+import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
@@ -15,14 +16,18 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import io.okandroid.OkAndroid;
 import io.okandroid.bluetooth.le.OkBleClient;
 import io.okandroid.bluetooth.le.OkBleScanner;
 import io.okandroid.bluetooth.le.service.PulseGeneratorService;
 import io.okandroid.cardioflex.pulsegen.Nordic52832;
+import io.reactivex.rxjava3.annotations.NonNull;
+import io.reactivex.rxjava3.core.SingleObserver;
 import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.functions.Consumer;
 import io.reactivex.rxjava3.schedulers.Schedulers;
@@ -71,21 +76,26 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private boolean notFirstConn;
+
     private void startClientJob() {
         Disposable disposableConnection = nordic52832.connect().subscribe(connectionStatus -> {
             Log.i(TAG, "connection::" + connectionStatus.name());
             if (connectionStatus == OkBleClient.ConnectionStatus.connected) {
-                // nordic52832.requestMtu();
-                // Thread.sleep(2000);
+                // if (!notFirstConn) {
+                notFirstConn = true;
+                nordic52832.requestMtu();
+                Thread.sleep(2000);
                 // System.out.println(client.getBluetoothGatt().getServices().size());
                 startServiceJob();
+                // }
             }
         });
     }
 
     private Nordic52832 nordic52832;
 
-    private void startServiceJob() {
+    private void startServiceJob() throws InterruptedException {
         TextView battery = findViewById(R.id.battery_text);
         nordic52832.deviceName().subscribe(s -> Log.i(TAG, "DEVICE_NAME: " + s));
         nordic52832.appearance().subscribe(integer -> Log.i(TAG, "APPEARANCE: " + integer));
@@ -94,6 +104,29 @@ public class MainActivity extends AppCompatActivity {
             Log.i(TAG, "BATTERY_LEVEL: " + level);
         });
         nordic52832.currentWave().subscribe(ints -> System.out.println("WAVE:: " + Arrays.toString(ints)));
+        List<PulseGeneratorService.WaveParam> params = new ArrayList<>();
+        params.add(new PulseGeneratorService.WaveParam(PulseGeneratorService.WaveParam.Type.square, 7, new int[]{333, 444, 555, 666, 777, 888, 999}));
+        params.add(new PulseGeneratorService.WaveParam(PulseGeneratorService.WaveParam.Type.exp, 7, new int[]{333, 444, 555, 666, 777, 888, 999}));
+        params.add(new PulseGeneratorService.WaveParam(PulseGeneratorService.WaveParam.Type.pulse, 7, new int[]{333, 444, 555, 666, 777, 888, 999}));
+        params.add(new PulseGeneratorService.WaveParam(PulseGeneratorService.WaveParam.Type.sin, 7, new int[]{333, 444, 555, 666, 777, 888, 999}));
+        params.add(new PulseGeneratorService.WaveParam(PulseGeneratorService.WaveParam.Type.cos, 7, new int[]{333, 444, 555, 666, 777, 888, 999}));
+        Thread.sleep(1000);
+        nordic52832.sendWave(params).subscribe(new SingleObserver<List<BluetoothGattCharacteristic>>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable d) {
+
+            }
+
+            @Override
+            public void onSuccess(@NonNull List<BluetoothGattCharacteristic> bluetoothGattCharacteristics) {
+                System.out.println(bluetoothGattCharacteristics.size());
+            }
+
+            @Override
+            public void onError(@NonNull Throwable e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     @RequiresApi(api = Build.VERSION_CODES.S)

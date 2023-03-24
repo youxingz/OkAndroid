@@ -1,5 +1,6 @@
 package io.okandroid.bluetooth.le.service;
 
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothGattCharacteristic;
 
 import org.reactivestreams.Subscriber;
@@ -13,9 +14,13 @@ import java.util.UUID;
 import io.okandroid.OkAndroid;
 import io.okandroid.bluetooth.OkBluetoothException;
 import io.okandroid.bluetooth.le.OkBleClient;
+import io.reactivex.rxjava3.annotations.NonNull;
+import io.reactivex.rxjava3.core.FlowableSubscriber;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.core.SingleObserver;
 import io.reactivex.rxjava3.core.SingleSource;
+import io.reactivex.rxjava3.functions.Function;
 
 public class PulseGeneratorService extends AbstractService {
     public static final UUID PULSE_GENERATOR_SERVICE = UUID.fromString("0000face-0000-1000-8000-00805f9b34fb");
@@ -58,36 +63,58 @@ public class PulseGeneratorService extends AbstractService {
             for (int i = 0; i < total; i++) {
                 WaveParam param = params.get(i);
                 byte[] data = param.toPayload(total, i);
-                Single<BluetoothGattCharacteristic> single = client.writeCharacteristic(characteristic, data, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+                Single<BluetoothGattCharacteristic> single = client.writeCharacteristic(characteristic, data, BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+                //.onErrorResumeNext(new Function<Throwable, SingleSource<? extends BluetoothGattCharacteristic>>() {
+                //     @Override
+                //     public SingleSource<? extends BluetoothGattCharacteristic> apply(Throwable throwable) throws Throwable {
+                //         return new SingleSource<BluetoothGattCharacteristic>() {
+                //             @Override
+                //             public void subscribe(@NonNull SingleObserver<? super BluetoothGattCharacteristic> observer) {
+                //                 // observer.onSuccess();
+                //             }
+                //         };
+                //     }
+                // });
                 singles.add(single);
             }
 
-            List<BluetoothGattCharacteristic> results = new LinkedList<>();
-            Single.concat(singles).observeOn(OkAndroid.mainThread()).subscribeOn(OkAndroid.subscribeIOThread()).subscribe(new Subscriber<BluetoothGattCharacteristic>() {
-                @Override
-                public void onSubscribe(Subscription s) {
-                    // start.
-                }
+            Single.merge(singles)
+                    .observeOn(OkAndroid.mainThread())
+                    .subscribeOn(OkAndroid.subscribeIOThread())
+                    .subscribe(new FlowableSubscriber<BluetoothGattCharacteristic>() {
+                        List<BluetoothGattCharacteristic> results; //= new LinkedList<>();
 
-                @Override
-                public void onNext(BluetoothGattCharacteristic characteristic) {
-                    results.add(characteristic);
-                }
+                        @SuppressLint("MissingPermission")
+                        @Override
+                        public void onSubscribe(Subscription s) {
+                            // start.
+                            // client.getBluetoothGatt().beginReliableWrite();
+                            results = new ArrayList<>();
+                        }
 
-                @Override
-                public void onError(Throwable t) {
-                    if (emitter != null && !emitter.isDisposed()) {
-                        emitter.onError(t);
-                    }
-                }
+                        @Override
+                        public void onNext(BluetoothGattCharacteristic characteristic) {
+                            results.add(characteristic);
+                        }
 
-                @Override
-                public void onComplete() {
-                    if (emitter != null && !emitter.isDisposed()) {
-                        emitter.onSuccess(results);
-                    }
-                }
-            });
+                        @SuppressLint("MissingPermission")
+                        @Override
+                        public void onError(Throwable t) {
+                            // client.getBluetoothGatt().executeReliableWrite();
+                            if (emitter != null && !emitter.isDisposed()) {
+                                emitter.onError(t);
+                            }
+                        }
+
+                        @SuppressLint("MissingPermission")
+                        @Override
+                        public void onComplete() {
+                            // client.getBluetoothGatt().executeReliableWrite();
+                            if (emitter != null && !emitter.isDisposed()) {
+                                emitter.onSuccess(results);
+                            }
+                        }
+                    });
         });
     }
 

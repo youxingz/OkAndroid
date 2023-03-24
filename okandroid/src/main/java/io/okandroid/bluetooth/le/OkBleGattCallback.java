@@ -102,7 +102,7 @@ public abstract class OkBleGattCallback extends BluetoothGattCallback {
     }
 
     @SuppressLint("MissingPermission")
-    private void continueReading() {
+    private synchronized void continueReading() {
         if (requestReadQueue.isEmpty()) return;
         if (!isReadRunning) {
             isReadRunning = true;
@@ -118,14 +118,23 @@ public abstract class OkBleGattCallback extends BluetoothGattCallback {
         super.onCharacteristicWrite(gatt, characteristic, status);
         isWriteRunning = false;
         SingleEmitter<BluetoothGattCharacteristic> emitter = currentWriteEmitter;
-        continueWriting();
+        if (emitter == null) return;
+        if (!emitter.isDisposed()) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                emitter.onSuccess(characteristic);
+            } else {
+                emitter.onError(new OkBluetoothException.DeviceWriteException(String.format("Device write error. status=[%d]", status), status));
+            }
+        }
         this.onOkBleCharacteristicWrite(gatt, emitter, characteristic, status);
+        continueWriting();
     }
 
 
-    @SuppressLint({"MissingPermission", "WrongConstant"})
-    private void continueWriting() {
+    @SuppressLint({"MissingPermission", "WrongConstant", "DefaultLocale"})
+    private synchronized void continueWriting() {
         if (requestWriteQueue.isEmpty()) return;
+        System.out.println(">> REST WRITE QUEUE: " + requestWriteQueue.size());
         if (!isWriteRunning) {
             isWriteRunning = true;
             OkBleCharacteristicWriteRequest request = requestWriteQueue.poll();
@@ -134,18 +143,26 @@ public abstract class OkBleGattCallback extends BluetoothGattCallback {
             BluetoothGattCharacteristic characteristic = request.getCharacteristic();
             currentWriteEmitter = emitter;
             int code = -1;
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                code = gatt.writeCharacteristic(characteristic, request.getData(), request.getWriteType());
-            } else {
-                characteristic.setValue(request.getData());
-                characteristic.setWriteType(request.getWriteType());
-                code = gatt.writeCharacteristic(characteristic) ? 0 : -1;
-            }
-            if (code != BluetoothStatusCodes.SUCCESS) {
-                if (!emitter.isDisposed()) {
-                    emitter.onError(new OkBluetoothException.DeviceWriteException("Device write error.", code));
+            while (code != 0) {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                    code = gatt.writeCharacteristic(characteristic, request.getData(), request.getWriteType());
+                } else {
+                    characteristic.setValue(request.getData());
+                    characteristic.setWriteType(request.getWriteType());
+                    code = gatt.writeCharacteristic(characteristic) ? 0 : -1;
                 }
+                try {
+                    Thread.sleep(10); // ms
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                System.out.println("RETRY...");
             }
+            // if (code != BluetoothStatusCodes.SUCCESS) {
+            //     if (!emitter.isDisposed()) {
+            //         emitter.onError(new OkBluetoothException.DeviceWriteException(String.format("Device write error. [%d]", code), code));
+            //     }
+            // }
         }
     }
 
