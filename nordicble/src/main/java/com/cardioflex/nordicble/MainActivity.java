@@ -53,7 +53,10 @@ public class MainActivity extends AppCompatActivity {
                 Log.i(TAG, "find one...");
                 System.out.println(scanResult.getScanRecord().getDeviceName());
                 String mac = scanResult.getDevice().getAddress();
-                if ("D6:78:A9:EE:65:3F".equals(mac)) {
+                System.out.println(mac);
+                // F5:34:F4:78:DB:AA
+                // D6:78:A9:EE:65:3F
+                if ("F5:34:F4:78:DB:AA".equals(mac)) {
                     if (nordic52832 == null) {
                         nordic52832 = new Nordic52832(MainActivity.this, mac);
                         startClientJob();
@@ -71,6 +74,8 @@ public class MainActivity extends AppCompatActivity {
         Disposable disposableConnection = nordic52832.connect().subscribe(connectionStatus -> {
             Log.i(TAG, "connection::" + connectionStatus.name());
             if (connectionStatus == OkBleClient.ConnectionStatus.connected) {
+                // nordic52832.requestMtu();
+                // Thread.sleep(2000);
                 // System.out.println(client.getBluetoothGatt().getServices().size());
                 startServiceJob();
             }
@@ -82,7 +87,7 @@ public class MainActivity extends AppCompatActivity {
     private void startServiceJob() {
         nordic52832.deviceName().subscribe(s -> Log.i(TAG, "DEVICE_NAME: " + s));
         nordic52832.appearance().subscribe(integer -> Log.i(TAG, "APPEARANCE: " + integer));
-        // nordic52832.battery().subscribe(level -> Log.i(TAG, "BATTERY_LEVEL: " + level));
+        nordic52832.battery().subscribe(level -> Log.i(TAG, "BATTERY_LEVEL: " + level));
         nordic52832.currentWave().subscribe(ints -> System.out.println("WAVE:: " + Arrays.toString(ints)));
     }
 

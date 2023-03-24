@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothStatusCodes;
+import android.os.Build;
 
 import java.util.Hashtable;
 import java.util.Queue;
@@ -60,14 +61,23 @@ public abstract class OkBleGattCallback extends BluetoothGattCallback {
     public Observable<OkBleCharacteristic> observeNotification(BluetoothGattDescriptor descriptor) {
         return Observable.create(emitter -> {
             BluetoothGattCharacteristic characteristic = descriptor.getCharacteristic();
+            // boolean success = gatt.setCharacteristicNotification(characteristic, false);
             boolean success = gatt.setCharacteristicNotification(characteristic, true);
             if (success) {
                 characteristicChangeEmitterMap.put(characteristic, emitter);
                 // BluetoothGattDescriptor descriptor = characteristic.getDescriptor(UUID.fromString(characteristic.getUuid()));
-                descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-                descriptor.setValue(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
-                success = gatt.writeDescriptor(descriptor);
+                // descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                // descriptor.setValue(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
+                // success = gatt.writeDescriptor(descriptor);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    gatt.writeDescriptor(descriptor, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                } else {
+                    descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                    // descriptor.setValue(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE); // ? 带上就不一定会成功订阅
+                    gatt.writeDescriptor(descriptor);
+                }
             }
+            // success = gatt.setCharacteristicNotification(characteristic, true);
         });
     }
 

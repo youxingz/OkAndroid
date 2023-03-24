@@ -59,30 +59,37 @@ public class OkBleScanner {
                         }
                     }
                 }, 1000, 1000);
-                adapter.getBluetoothLeScanner().startScan(filters, settings, new ScanCallback() {
-                    @Override
-                    public void onScanResult(int callbackType, ScanResult result) {
-                        super.onScanResult(callbackType, result);
-                        if (emitter.isDisposed()) return;
-                        // result.getScanRecord().getServiceUuids();
-                        emitter.onNext(result);
-                        lastFoundDeviceAt[0] = System.currentTimeMillis();
-                    }
+                try {
+                    adapter.getBluetoothLeScanner().startScan(filters, settings, new ScanCallback() {
+                        @Override
+                        public void onScanResult(int callbackType, ScanResult result) {
+                            super.onScanResult(callbackType, result);
+                            if (emitter.isDisposed()) return;
+                            // result.getScanRecord().getServiceUuids();
+                            emitter.onNext(result);
+                            lastFoundDeviceAt[0] = System.currentTimeMillis();
+                        }
 
-                    @Override
-                    public void onBatchScanResults(List<ScanResult> results) {
-                        super.onBatchScanResults(results);
-                        if (emitter.isDisposed()) return;
-                        emitter.onComplete();
-                    }
+                        @Override
+                        public void onBatchScanResults(List<ScanResult> results) {
+                            super.onBatchScanResults(results);
+                            if (emitter.isDisposed()) return;
+                            emitter.onComplete();
+                        }
 
-                    @Override
-                    public void onScanFailed(int errorCode) {
-                        super.onScanFailed(errorCode);
-                        if (emitter.isDisposed()) return;
-                        emitter.onError(new OkBluetoothException.ErrorCodeException(errorCode));
+                        @Override
+                        public void onScanFailed(int errorCode) {
+                            super.onScanFailed(errorCode);
+                            if (emitter.isDisposed()) return;
+                            emitter.onError(new OkBluetoothException.ErrorCodeException(errorCode));
+                        }
+                    });
+                } catch (SecurityException e) {
+                    // Need android.permission.BLUETOOTH_SCAN permission
+                    if (emitter != null && !emitter.isDisposed()) {
+                        emitter.onError(e);
                     }
-                });
+                }
             }
         });
     }

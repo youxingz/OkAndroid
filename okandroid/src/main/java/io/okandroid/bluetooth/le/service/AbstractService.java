@@ -18,9 +18,10 @@ import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public abstract class AbstractService {
+    public static final UUID CLIENT_CHARACTERISTIC_CONFIG_DESC = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
     protected OkBleClient client;
     protected String serviceName;
-    
+
     public AbstractService(String serviceName, OkBleClient client) {
         this.serviceName = serviceName;
         this.client = client;
@@ -65,11 +66,12 @@ public abstract class AbstractService {
                 emitter.onError(new OkBluetoothException(String.format("BLE device not support: [NOTIFY] %s / %s / %s", serviceName, characteristicUUID, descriptorUUID)));
                 return;
             }
-            client.enableNotification(characteristic, descriptorUUID, true);
+            Thread.sleep(1000);
+            // client.enableNotification(characteristic, descriptorUUID, true);
             client.observeNotification(descriptor).observeOn(OkAndroid.mainThread()).subscribeOn(Schedulers.io()).subscribe(new Observer<OkBleCharacteristic>() {
                 @Override
                 public void onSubscribe(@NonNull Disposable d) {
-
+                    System.out.println(d.isDisposed());
                 }
 
                 @Override

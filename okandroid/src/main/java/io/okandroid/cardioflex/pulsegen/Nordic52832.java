@@ -14,6 +14,8 @@ import io.okandroid.bluetooth.le.service.PulseGeneratorService;
 import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.core.SingleObserver;
+import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class Nordic52832 {
@@ -37,6 +39,25 @@ public class Nordic52832 {
 
     public void disconnect() {
         this.client.disconnect();
+    }
+
+    public void requestMtu() { // set 500 (>480=16*30)
+        client.setMtu(23).observeOn(OkAndroid.mainThread()).subscribeOn(Schedulers.io()).subscribe(new SingleObserver<Integer>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable d) {
+
+            }
+
+            @Override
+            public void onSuccess(@NonNull Integer integer) {
+                
+            }
+
+            @Override
+            public void onError(@NonNull Throwable e) {
+
+            }
+        });
     }
 
     /*** 具体服务 ***/
