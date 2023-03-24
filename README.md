@@ -7,9 +7,11 @@ This project includes:
 - `JsBridge`: Java - JavaScript bridge.
 - `Socket`
 - `HTTP Server/Client`
-- `Bluetooth`: A Rx-style bluetooth framework.
+- `Bluetooth`: A Rx-style bluetooth framework. Support BLE.
 - `Wi-Fi`
 - `Audio`
 - `Screen`
+- `Motor`: LeadShine, JieHeng, LeadFluid motor controller.
+- `Modbus`: ref: `modbus4j`.
 - ...
 
