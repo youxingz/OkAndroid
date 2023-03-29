@@ -98,8 +98,8 @@ class LeadFluidActivityX : AppCompatActivity() {
             val modbus = Modbus(device?.device?.name, modbusMaster)
             val pane1 = ControlPaneLeadFluidPumpX(this, modbus, index + 1)
             val params1 = GridLayout.LayoutParams()
-            params1.columnSpec = GridLayout.spec(0)
-            params1.rowSpec = GridLayout.spec(index)
+            params1.columnSpec = GridLayout.spec(index % 3)
+            params1.rowSpec = GridLayout.spec(index / 3)
             gridLayout.addView(pane1, params1)
         }
     }
