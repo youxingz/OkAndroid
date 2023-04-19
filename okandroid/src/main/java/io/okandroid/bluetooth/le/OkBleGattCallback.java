@@ -143,7 +143,7 @@ public abstract class OkBleGattCallback extends BluetoothGattCallback {
             BluetoothGattCharacteristic characteristic = request.getCharacteristic();
             currentWriteEmitter = emitter;
             int code = -1;
-            while (code != 0) {
+            while (true) {
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
                     code = gatt.writeCharacteristic(characteristic, request.getData(), request.getWriteType());
                 } else {
@@ -155,6 +155,9 @@ public abstract class OkBleGattCallback extends BluetoothGattCallback {
                     Thread.sleep(10); // ms
                 } catch (InterruptedException e) {
                     e.printStackTrace();
+                }
+                if (code == 0) {
+                    break;
                 }
                 System.out.println("RETRY...");
             }

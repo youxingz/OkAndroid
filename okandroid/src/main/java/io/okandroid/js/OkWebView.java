@@ -1,5 +1,6 @@
 package io.okandroid.js;
 
+import android.annotation.SuppressLint;
 import android.webkit.WebView;
 
 import com.google.gson.JsonSyntaxException;
@@ -15,7 +16,9 @@ public class OkWebView {
     private WebView webView;
     private static Map<String, OkWebView> webViewMap;
 
+    @SuppressLint("SetJavaScriptEnabled")
     public OkWebView(String name, WebView webView) {
+        webView.getSettings().setJavaScriptEnabled(true);
         this.webView = webView;
         if (webViewMap == null) {
             webViewMap = new HashMap<>();

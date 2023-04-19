@@ -90,6 +90,7 @@ public class PulseGeneratorService extends AbstractService {
                             // start.
                             // client.getBluetoothGatt().beginReliableWrite();
                             results = new ArrayList<>();
+                            s.request(singles.size());
                         }
 
                         @Override
@@ -143,6 +144,9 @@ public class PulseGeneratorService extends AbstractService {
             if (params.length < length) throw new RuntimeException("Params length is not correct.");
         }
 
+        public WaveParam() {
+        }
+
         public byte[] toPayload(int total, int index) {
             byte[] data = new byte[length * 2 + 6];
             int id = type.getCode();
@@ -161,5 +165,28 @@ public class PulseGeneratorService extends AbstractService {
             return data;
         }
 
+        public Type getType() {
+            return type;
+        }
+
+        public void setType(Type type) {
+            this.type = type;
+        }
+
+        public int getLength() {
+            return length;
+        }
+
+        public void setLength(int length) {
+            this.length = length;
+        }
+
+        public int[] getParams() {
+            return params;
+        }
+
+        public void setParams(int[] params) {
+            this.params = params;
+        }
     }
 }

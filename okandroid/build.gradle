@@ -54,4 +54,8 @@ dependencies {
     api 'com.github.youxingz:modbus4j:800351afdc'
 
     api 'com.github.mik3y:usb-serial-for-android:3.4.6'
+
+    api 'org.eclipse.milo:sdk-client:0.6.9'
+//    api 'org.eclipse.milo:dictionary-reader:0.6.9'
+//    api 'org.bouncycastle:bcpkix-jdk15on:1.69'
 }
