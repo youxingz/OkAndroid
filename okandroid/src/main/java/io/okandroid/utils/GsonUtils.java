@@ -24,7 +24,7 @@ public class GsonUtils {
                     // 设置日期格式
                     .setDateFormat("yyyy-MM-dd HH:mm:ss:SSS")
                     // 设置自动切换命名风格规则（默认不切换命名风格）
-                    .setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE)
+                    .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
                     // 设置过滤指定字段标识符（默认只过滤 transient 和 static 字段）
                     .excludeFieldsWithModifiers(Modifier.TRANSIENT | Modifier.STATIC)
                     // 设置类或字段过滤规则

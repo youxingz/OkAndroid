@@ -27,6 +27,7 @@ import io.reactivex.rxjava3.disposables.Disposable;
 public class XController {
 
     private static volatile boolean waveSending = false;
+    private static volatile long lastSendWaveAt = System.currentTimeMillis();
 
     @GetMapping("/local-api/test")
     public String test(@RequestParam("text") String text) {
@@ -35,13 +36,22 @@ public class XController {
 
     @PostMapping("/local-api/trigger")
     public String triggerWaveSend(@RequestBody String payloadStr, HttpResponse response) throws InterruptedException {
+        if (System.currentTimeMillis() > lastSendWaveAt + 10000) { // 10s
+            waveSending = false;
+            lastSendWaveAt = System.currentTimeMillis();
+        }
         if (waveSending) {
             response.setStatus(403);
             response.setBody(new StringBody("Wave Sending... [Denied]"));
             return "Wave Sending... [Denied]";
         }
-        waveSending = true;
         List<PulseGeneratorService.WaveParam> params = GsonUtils.fromJsonList(payloadStr, PulseGeneratorService.WaveParam.class);
+        if (params.size() == 0) {
+            response.setStatus(400);
+            response.setBody(new StringBody("Invalid Size. [0]"));
+            return "Invalid Size. [0]";
+        }
+        waveSending = true;
         if (DashboardActivity.getNrf52832ConnectionStatus() == OkBleClient.ConnectionStatus.connected) {
             final String[] respText = {"success"};
             DashboardActivity.getNordic52832Instance().sendWave(params).blockingSubscribe(new SingleObserver<List<BluetoothGattCharacteristic>>() {
@@ -54,7 +64,8 @@ public class XController {
                 public void onSuccess(@NonNull List<BluetoothGattCharacteristic> bluetoothGattCharacteristics) {
                     waveSending = false;
                     if (bluetoothGattCharacteristics.size() == params.size()) {
-                        respText[0] = "success";
+                        int totalTimeRequired = params.stream().map(PulseGeneratorService.WaveParam::timeNeed).reduce(0, Integer::sum);
+                        respText[0] = "" + totalTimeRequired;
                         response.setStatus(201);
                     }
                 }

@@ -3,24 +3,19 @@ package io.okandroid.bluetooth.le.service;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothGattCharacteristic;
 
-import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
 import io.okandroid.OkAndroid;
 import io.okandroid.bluetooth.OkBluetoothException;
 import io.okandroid.bluetooth.le.OkBleClient;
-import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.FlowableSubscriber;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.Single;
-import io.reactivex.rxjava3.core.SingleObserver;
 import io.reactivex.rxjava3.core.SingleSource;
-import io.reactivex.rxjava3.functions.Function;
 
 public class PulseGeneratorService extends AbstractService {
     public static final UUID PULSE_GENERATOR_SERVICE = UUID.fromString("0000face-0000-1000-8000-00805f9b34fb");
@@ -62,7 +57,7 @@ public class PulseGeneratorService extends AbstractService {
             int total = params.size();
             for (int i = 0; i < total; i++) {
                 WaveParam param = params.get(i);
-                byte[] data = param.toPayload(total, i);
+                byte[] data = param.toPayload((int) (System.currentTimeMillis() / 1000), total, i);
                 Single<BluetoothGattCharacteristic> single = client.writeCharacteristic(characteristic, data, BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
                 //.onErrorResumeNext(new Function<Throwable, SingleSource<? extends BluetoothGattCharacteristic>>() {
                 //     @Override
@@ -147,22 +142,40 @@ public class PulseGeneratorService extends AbstractService {
         public WaveParam() {
         }
 
-        public byte[] toPayload(int total, int index) {
-            byte[] data = new byte[length * 2 + 6];
-            int id = type.getCode();
+        public byte[] toPayload(int id, int total, int index) {
+            byte[] data = new byte[length * 2 + 8];
+            int command = type.getCode();
             data[0] = (byte) (id >> 8 & 0xFF);
             data[1] = (byte) (id & 0xFF);
             data[2] = (byte) (total >> 8 & 0xFF);
             data[3] = (byte) (total & 0xFF);
             data[4] = (byte) (index >> 8 & 0xFF);
             data[5] = (byte) (index & 0xFF);
+            data[6] = (byte) (command >> 8 & 0xFF);
+            data[7] = (byte) (command & 0xFF);
             // params:
             for (int i = 0; i < length; i++) {
                 int param = params[i];
-                data[6 + 2 * i] = (byte) (param >> 8 & 0xFF);
-                data[6 + 2 * i + 1] = (byte) (param & 0xFF);
+                data[8 + 2 * i] = (byte) (param >> 8 & 0xFF);
+                data[8 + 2 * i + 1] = (byte) (param & 0xFF);
             }
             return data;
+        }
+
+        public int timeNeed() {
+            int time = 0;
+            switch (type) {
+                case square: {
+                    time = params[2] * params[4]; // count * period_us
+                    break;
+                }
+                case pulse: {
+                    time = params[1]; // period_us
+                    break;
+                }
+                // TODO! 支持更多类型的波形时需要在这里计算最终耗时
+            }
+            return time;
         }
 
         public Type getType() {

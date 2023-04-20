@@ -5,7 +5,7 @@ public class EventResponse {
     private String requestId;
     private Long timestamp;
     private Object data;
-    
+
     public String getRequestId() {
         return requestId;
     }
@@ -28,5 +28,14 @@ public class EventResponse {
 
     public void setData(Object data) {
         this.data = data;
+    }
+
+    @Override
+    public String toString() {
+        return "EventResponse{" +
+                "requestId='" + requestId + '\'' +
+                ", timestamp=" + timestamp +
+                ", data=" + data +
+                '}';
     }
 }

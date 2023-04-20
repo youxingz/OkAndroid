@@ -12,11 +12,16 @@ import android.util.Log;
 import android.webkit.WebView;
 import android.widget.Toast;
 
+import com.cardioflex.pulse_generator.x.EventPayload;
 import com.cardioflex.pulse_generator.x.XServer;
 
+import io.okandroid.OkAndroid;
 import io.okandroid.bluetooth.le.OkBleClient;
 import io.okandroid.cardioflex.pulsegen.Nordic52832;
+import io.okandroid.js.EventResponse;
 import io.okandroid.js.OkWebView;
+import io.reactivex.rxjava3.core.SingleObserver;
+import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.functions.Consumer;
 
 public class DashboardActivity extends AppCompatActivity {
@@ -26,6 +31,8 @@ public class DashboardActivity extends AppCompatActivity {
     private static OkWebView okWebView;
     private static Nordic52832 nordic52832;
     private static OkBleClient.ConnectionStatus nrf52832ConnectionStatus;
+
+    public static volatile boolean pageLoading = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,13 +58,15 @@ public class DashboardActivity extends AppCompatActivity {
 
     private void initWebView() {
         WebView webView = findViewById(R.id.pg_webview);
-        webView.setWebViewClient(new OkWebClient());
+        OkWebClient client = new OkWebClient();
+        webView.setWebViewClient(client);
         webView.setWebChromeClient(new OkChromeClient());
         // webView.loadUrl("https://www.zhihu.com");
         webView.loadUrl(URL);
         webView.reload();
         //        webView.goBack();
         okWebView = new OkWebView("PG", webView);
+        client.setOkWebView(okWebView);
     }
 
     private void initServer() {
@@ -67,17 +76,37 @@ public class DashboardActivity extends AppCompatActivity {
 
     @SuppressLint("CheckResult")
     private void initNordic52832() {
-        nordic52832 = new Nordic52832(this, "F5:34:F4:78:DB:AA");
-        nordic52832.connect().subscribe(connectionStatus -> {
-            Log.i(TAG, "connection::" + connectionStatus.name());
-            if (connectionStatus == OkBleClient.ConnectionStatus.connected) {
-                // if (!notFirstConn) {
-                // notFirstConn = true;
-                // System.out.println(client.getBluetoothGatt().getServices().size());
-                // startServiceJob();
-                // }
+        OkAndroid.newThread().scheduleDirect(() -> {
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
-            nrf52832ConnectionStatus = connectionStatus;
+            // 58:61:C0:60:94:99
+            nordic52832 = new Nordic52832(this, "F5:34:F4:78:DB:AA");
+            nordic52832.connect().subscribe(connectionStatus -> {
+                Log.i(TAG, "connection::" + connectionStatus.name());
+                if (connectionStatus == OkBleClient.ConnectionStatus.connected) {
+                    // do something.
+                }
+                nrf52832ConnectionStatus = connectionStatus;
+                okWebView.sendToWeb(new EventPayload("ble_status", connectionStatus.ordinal(), connectionStatus.name(), null)).subscribeOn(OkAndroid.subscribeIOThread()).observeOn(OkAndroid.mainThread()).subscribe(new SingleObserver<EventResponse>() {
+                    @Override
+                    public void onSubscribe(@io.reactivex.rxjava3.annotations.NonNull Disposable d) {
+
+                    }
+
+                    @Override
+                    public void onSuccess(@io.reactivex.rxjava3.annotations.NonNull EventResponse eventResponse) {
+                        System.out.println(eventResponse);
+                    }
+
+                    @Override
+                    public void onError(@io.reactivex.rxjava3.annotations.NonNull Throwable e) {
+                        e.printStackTrace();
+                    }
+                });
+            });
         });
     }
 

@@ -1,16 +1,23 @@
 package com.cardioflex.pulse_generator;
 
-import android.net.Uri;
-import android.util.Log;
+import android.graphics.Bitmap;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+
+import io.okandroid.js.OkWebView;
 
 public class OkWebClient extends WebViewClient {
     private static final String TAG = "OkWebClient";
     private static final String[] availableHosts = new String[]{
             "zhihu.com", "roumai.org", "localhost"
     };
+
+    private OkWebView okWebView;
+
+    public void setOkWebView(OkWebView okWebView) {
+        this.okWebView = okWebView;
+    }
 
     /**
      * @param view
@@ -36,5 +43,19 @@ public class OkWebClient extends WebViewClient {
         // }
         // return true;
         return false;
+    }
+
+    @Override
+    public void onPageStarted(WebView view, String url, Bitmap favicon) {
+        if (okWebView != null) {
+            okWebView.setPageLoading(true);
+        }
+    }
+
+    @Override
+    public void onPageFinished(WebView view, String url) {
+        if (okWebView != null) {
+            okWebView.setPageLoading(false);
+        }
     }
 }

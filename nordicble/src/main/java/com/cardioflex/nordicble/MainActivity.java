@@ -52,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
     private void scan() {
 
         OkBleScanner scanner = new OkBleScanner(this);
-        ScanFilter filter = new ScanFilter.Builder().setServiceUuid(new ParcelUuid(PulseGeneratorService.PULSE_GENERATOR_SERVICE)).build();
+        ScanFilter filter = new ScanFilter.Builder().build(); // .setServiceUuid(new ParcelUuid(PulseGeneratorService.PULSE_GENERATOR_SERVICE)).build();
         System.out.println("?");
         disposable = scanner.scan(new ScanSettings.Builder().build(), Collections.singletonList(filter)).subscribeOn(Schedulers.io()).observeOn(OkAndroid.mainThread()).subscribe(new Consumer<ScanResult>() {
             @Override
@@ -61,9 +61,10 @@ public class MainActivity extends AppCompatActivity {
                 System.out.println(scanResult.getScanRecord().getDeviceName());
                 String mac = scanResult.getDevice().getAddress();
                 System.out.println(mac);
-                // F5:34:F4:78:DB:AA
+                // F5:34:F4:78:DB:AA nordic
                 // D6:78:A9:EE:65:3F
-                if ("F5:34:F4:78:DB:AA".equals(mac)) {
+                // 58:61:C0:60:94:99 iphone
+                if ("58:61:C0:60:94:99".equals(mac)) {
                     if (nordic52832 == null) {
                         nordic52832 = new Nordic52832(MainActivity.this, mac);
                         startClientJob();
