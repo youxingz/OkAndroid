@@ -1,6 +1,8 @@
 package com.cardioflex.pulse_generator;
 
 import android.graphics.Bitmap;
+import android.net.Uri;
+import android.util.Log;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -12,6 +14,12 @@ public class OkWebClient extends WebViewClient {
     private static final String[] availableHosts = new String[]{
             "zhihu.com", "roumai.org", "localhost"
     };
+
+    private CoreActivity coreActivity;
+
+    public OkWebClient(CoreActivity coreActivity) {
+        this.coreActivity = coreActivity;
+    }
 
     private OkWebView okWebView;
 
@@ -56,6 +64,23 @@ public class OkWebClient extends WebViewClient {
     public void onPageFinished(WebView view, String url) {
         if (okWebView != null) {
             okWebView.setPageLoading(false);
+        }
+        Uri uri = Uri.parse(url);
+        System.out.println(">>>>>url:  " + url);
+        System.out.println(">>>>>path: " + uri.getPath());
+        switch (uri.getPath()) {
+            case "/device_list.html": {
+                PageDeviceList.setCoreActivity(coreActivity);
+                PageDeviceList.startScanDevice(); // 进入页面自动开始设备搜索
+                break;
+            }
+            case "/device_dashboard.html": {
+                PageDashboard.setCoreActivity(coreActivity);
+                String macAddress = uri.getQueryParameter("mac");
+                Log.i(TAG, "ConnectTo: [device mac] " + macAddress);
+                PageDashboard.startConnect(macAddress); // 进入页面自动开始设备连接
+                break;
+            }
         }
     }
 }

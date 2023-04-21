@@ -22,17 +22,12 @@ import io.okandroid.js.EventResponse;
 import io.okandroid.js.OkWebView;
 import io.reactivex.rxjava3.core.SingleObserver;
 import io.reactivex.rxjava3.disposables.Disposable;
-import io.reactivex.rxjava3.functions.Consumer;
 
-public class DashboardActivity extends AppCompatActivity {
+public class CoreActivity extends AppCompatActivity {
     private final static String TAG = "MainActivity";
-    private static final String URL = "http://localhost:8080/device_dashboard.html";
+    private static final String URL = "http://localhost:8080/device_list.html";
     // private static final String URL = "http://192.168.3.194:3000/device_dashboard";
     private static OkWebView okWebView;
-    private static Nordic52832 nordic52832;
-    private static OkBleClient.ConnectionStatus nrf52832ConnectionStatus;
-
-    public static volatile boolean pageLoading = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,24 +36,17 @@ public class DashboardActivity extends AppCompatActivity {
         requestPermissions();
         initServer();
         initWebView();
-        initNordic52832();
+        // initNordic52832();
     }
 
     public static OkWebView getOkWebViewInstance() {
         return okWebView;
     }
 
-    public static Nordic52832 getNordic52832Instance() {
-        return nordic52832;
-    }
-
-    public static OkBleClient.ConnectionStatus getNrf52832ConnectionStatus() {
-        return nrf52832ConnectionStatus;
-    }
 
     private void initWebView() {
         WebView webView = findViewById(R.id.pg_webview);
-        OkWebClient client = new OkWebClient();
+        OkWebClient client = new OkWebClient(this);
         webView.setWebViewClient(client);
         webView.setWebChromeClient(new OkChromeClient());
         // webView.loadUrl("https://www.zhihu.com");
@@ -74,41 +62,6 @@ public class DashboardActivity extends AppCompatActivity {
         server.start();
     }
 
-    @SuppressLint("CheckResult")
-    private void initNordic52832() {
-        OkAndroid.newThread().scheduleDirect(() -> {
-            try {
-                Thread.sleep(3000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            // 58:61:C0:60:94:99
-            nordic52832 = new Nordic52832(this, "F5:34:F4:78:DB:AA");
-            nordic52832.connect().subscribe(connectionStatus -> {
-                Log.i(TAG, "connection::" + connectionStatus.name());
-                if (connectionStatus == OkBleClient.ConnectionStatus.connected) {
-                    // do something.
-                }
-                nrf52832ConnectionStatus = connectionStatus;
-                okWebView.sendToWeb(new EventPayload("ble_status", connectionStatus.ordinal(), connectionStatus.name(), null)).subscribeOn(OkAndroid.subscribeIOThread()).observeOn(OkAndroid.mainThread()).subscribe(new SingleObserver<EventResponse>() {
-                    @Override
-                    public void onSubscribe(@io.reactivex.rxjava3.annotations.NonNull Disposable d) {
-
-                    }
-
-                    @Override
-                    public void onSuccess(@io.reactivex.rxjava3.annotations.NonNull EventResponse eventResponse) {
-                        System.out.println(eventResponse);
-                    }
-
-                    @Override
-                    public void onError(@io.reactivex.rxjava3.annotations.NonNull Throwable e) {
-                        e.printStackTrace();
-                    }
-                });
-            });
-        });
-    }
 
     private void requestPermissions() {
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.INTERNET) != PackageManager.PERMISSION_GRANTED) {

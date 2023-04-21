@@ -2,19 +2,18 @@ package com.cardioflex.pulse_generator.x;
 
 import android.bluetooth.BluetoothGattCharacteristic;
 
-import com.cardioflex.pulse_generator.DashboardActivity;
-import com.google.gson.internal.LinkedTreeMap;
+import com.cardioflex.pulse_generator.CoreActivity;
+import com.cardioflex.pulse_generator.PageDashboard;
+import com.cardioflex.pulse_generator.PageDeviceList;
 import com.yanzhenjie.andserver.annotation.GetMapping;
 import com.yanzhenjie.andserver.annotation.PostMapping;
 import com.yanzhenjie.andserver.annotation.RequestBody;
 import com.yanzhenjie.andserver.annotation.RequestParam;
 import com.yanzhenjie.andserver.annotation.RestController;
-import com.yanzhenjie.andserver.framework.body.JsonBody;
 import com.yanzhenjie.andserver.framework.body.StringBody;
 import com.yanzhenjie.andserver.http.HttpResponse;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import io.okandroid.bluetooth.le.OkBleClient;
 import io.okandroid.bluetooth.le.service.PulseGeneratorService;
@@ -52,9 +51,9 @@ public class XController {
             return "Invalid Size. [0]";
         }
         waveSending = true;
-        if (DashboardActivity.getNrf52832ConnectionStatus() == OkBleClient.ConnectionStatus.connected) {
+        if (PageDashboard.getNrf52832ConnectionStatus() == OkBleClient.ConnectionStatus.connected) {
             final String[] respText = {"success"};
-            DashboardActivity.getNordic52832Instance().sendWave(params).blockingSubscribe(new SingleObserver<List<BluetoothGattCharacteristic>>() {
+            PageDashboard.getNordic52832Instance().sendWave(params).blockingSubscribe(new SingleObserver<List<BluetoothGattCharacteristic>>() {
                 @Override
                 public void onSubscribe(@NonNull Disposable d) {
                     waveSending = true;
@@ -90,24 +89,11 @@ public class XController {
         }
     }
 
-    public static class WaveParamPayload {
-        private String id;
-        List<PulseGeneratorService.WaveParam> params;
 
-        public String getId() {
-            return id;
-        }
-
-        public void setId(String id) {
-            this.id = id;
-        }
-
-        public List<PulseGeneratorService.WaveParam> getParams() {
-            return params;
-        }
-
-        public void setParams(List<PulseGeneratorService.WaveParam> params) {
-            this.params = params;
-        }
+    @PostMapping("/local-api/search-device-start")
+    public String startScan(HttpResponse response) {
+        PageDeviceList.startScanDevice();
+        response.setStatus(201);
+        return "扫描中...";
     }
 }
