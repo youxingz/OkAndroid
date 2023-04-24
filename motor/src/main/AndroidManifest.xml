@@ -8,20 +8,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.OkAndroid">
         <activity
-            android:name=".leadshine.LeadShineActivity"
-            android:exported="true" />
-        <activity
-            android:name=".pump.PumpActivity"
-            android:exported="true">
-            <!--            <intent-filter>-->
-            <!--                <action android:name="android.intent.action.MAIN" />-->
-
-            <!--                <category android:name="android.intent.category.LAUNCHER" />-->
-            <!--            </intent-filter>-->
-        </activity>
-
-        <activity
-            android:name=".leadfluid.LeadFluidActivityX"
+            android:name=".leadfluid_x.LiquidActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -29,6 +16,23 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".leadshine.LeadShineActivity"
+            android:exported="true" />
+        <activity
+            android:name=".pump.PumpActivity"
+            android:exported="true">
+
+            <!-- <intent-filter> -->
+            <!-- <action android:name="android.intent.action.MAIN" /> -->
+
+
+            <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
+            <!-- </intent-filter> -->
+        </activity>
+        <activity
+            android:name=".leadfluid.LeadFluidActivityX"
+            android:exported="true"></activity>
     </application>
 
 </manifest>

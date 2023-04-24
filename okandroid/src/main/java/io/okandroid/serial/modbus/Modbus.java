@@ -79,6 +79,10 @@ public class Modbus {
         });
     }
 
+    public void clearQueue() {
+        requestQueue.clear();
+    }
+
     private synchronized void continueRequestWorking() {
         // if (isWorking) return;
         if (requestQueue.isEmpty()) return;

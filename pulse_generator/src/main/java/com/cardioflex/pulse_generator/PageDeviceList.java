@@ -15,13 +15,11 @@ import java.util.HashMap;
 import io.okandroid.OkAndroid;
 import io.okandroid.bluetooth.le.OkBleScanner;
 import io.okandroid.bluetooth.le.service.PulseGeneratorService;
-import io.okandroid.cardioflex.pulsegen.Nordic52832;
 import io.okandroid.js.EventResponse;
 import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.Observer;
 import io.reactivex.rxjava3.core.SingleObserver;
 import io.reactivex.rxjava3.disposables.Disposable;
-import io.reactivex.rxjava3.functions.Consumer;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class PageDeviceList {

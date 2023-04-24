@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    tools:context=".leadfluid_x.LiquidActivity">
+
+    <LinearLayout
+        android:layout_width="360dp"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_margin="16dp"
+        android:background="@drawable/border"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+        <TextView
+            android:id="@+id/title_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingBottom="6dp"
+            android:text="蠕动泵换液"
+            android:textColor="@color/black"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1.5dp"
+            android:background="#eee" />
+
+        <!--        <LinearLayout-->
+        <!--            android:layout_width="wrap_content"-->
+        <!--            android:layout_height="wrap_content"-->
+        <!--            android:layout_marginTop="12dp"-->
+        <!--            android:layout_marginBottom="12dp"-->
+        <!--            android:orientation="horizontal">-->
+
+        <!--            <TextView-->
+        <!--                android:layout_width="wrap_content"-->
+        <!--                android:layout_height="wrap_content"-->
+        <!--                android:text="A 高速排水（500RPM）   "-->
+        <!--                android:textColor="@color/black" />-->
+
+        <!--            <ToggleButton-->
+        <!--                android:id="@+id/direction_btn_clear_1"-->
+        <!--                android:layout_width="80dp"-->
+        <!--                android:layout_height="wrap_content"-->
+        <!--                android:layout_marginLeft="12dp"-->
+        <!--                android:textColor="#FF018786"-->
+        <!--                android:textOff="逆时针"-->
+        <!--                android:textOn="顺时针" />-->
+
+        <!--            <ToggleButton-->
+        <!--                android:id="@+id/clear_btn_1"-->
+        <!--                android:layout_width="wrap_content"-->
+        <!--                android:layout_height="wrap_content"-->
+        <!--                android:textOff="已停止"-->
+        <!--                android:textOn="运行中" />-->
+
+        <!--        </LinearLayout>-->
+
+        <!--        <LinearLayout-->
+        <!--            android:layout_width="wrap_content"-->
+        <!--            android:layout_height="wrap_content"-->
+        <!--            android:layout_marginTop="12dp"-->
+        <!--            android:layout_marginBottom="12dp"-->
+        <!--            android:orientation="horizontal">-->
+
+        <!--            <TextView-->
+        <!--                android:layout_width="wrap_content"-->
+        <!--                android:layout_height="wrap_content"-->
+        <!--                android:text="B 高速排水（500RPM）   "-->
+        <!--                android:textColor="@color/black" />-->
+
+        <!--            <ToggleButton-->
+        <!--                android:id="@+id/direction_btn_clear_2"-->
+        <!--                android:layout_width="80dp"-->
+        <!--                android:layout_height="wrap_content"-->
+        <!--                android:layout_marginLeft="12dp"-->
+        <!--                android:textColor="#FF018786"-->
+        <!--                android:textOff="逆时针"-->
+        <!--                android:textOn="顺时针" />-->
+
+        <!--            <ToggleButton-->
+        <!--                android:id="@+id/clear_btn_2"-->
+        <!--                android:layout_width="wrap_content"-->
+        <!--                android:layout_height="wrap_content"-->
+        <!--                android:textOff="已停止"-->
+        <!--                android:textOn="运行中" />-->
+
+        <!--        </LinearLayout>-->
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1.5dp"
+            android:background="#eee" />
+
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="12dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/config_item_add_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:text="添加一项" />
+
+            <ToggleButton
+                android:id="@+id/turn_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:textOff="已停止"
+                android:textOn="运行中" />
+        </RelativeLayout>
+
+        <ListView
+            android:id="@+id/config_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </LinearLayout>
+</LinearLayout>

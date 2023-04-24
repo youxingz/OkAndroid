@@ -38,6 +38,10 @@ public class LeadFluidPumpQueued {
         });
     }
 
+    public void clearQueue() {
+        master.clearQueue();
+    }
+
     /**
      * 修改从机地址
      * 0x3107
