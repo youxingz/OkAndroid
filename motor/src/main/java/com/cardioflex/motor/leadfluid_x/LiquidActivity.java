@@ -208,6 +208,7 @@ public class LiquidActivity extends AppCompatActivity {
         title.setText("蠕动泵换液【" + defaultDeviceName + "】");
         SerialDevice device = SerialDevice.newBuilder(defaultDeviceName, 9600).dataBits(8).parity(2).stopBits(1).build();
         ModbusMaster modbusMaster = ModbusMasterCreator.create(device);
+        modbusMaster.enableDebug(true);
         Modbus modbus = new Modbus(defaultDeviceName, modbusMaster);
         pump1 = new LeadFluidPumpQueued(modbus, 1);
         pump2 = new LeadFluidPumpQueued(modbus, 2);

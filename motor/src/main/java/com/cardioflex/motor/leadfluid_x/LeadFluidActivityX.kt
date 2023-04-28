@@ -68,8 +68,10 @@ class LeadFluidActivityX : AppCompatActivity() {
     private fun updateDevice(deviceFile: File) {
         try {
             device?.close()
-            device = SerialDevice.newBuilder(deviceFile, 9600)
-                .dataBits(8).parity(2).stopBits(1).build()
+//            device = SerialDevice.newBuilder(deviceFile, 9600)
+//                .dataBits(8).parity(2).stopBits(1).build()
+            device = SerialDevice.newBuilder(deviceFile, 38400)
+                .dataBits(8).parity(2).stopBits(1).flags(4).build()
             updateSlaveId()
             // 2.
 //            val pane = ControlPaneLeadFluidPump(this, device, 1)
@@ -94,9 +96,10 @@ class LeadFluidActivityX : AppCompatActivity() {
 //            }
         // 1.
         val modbusMaster = ModbusMasterCreator.create(device)
+        modbusMaster.enableDebug(true)
         for (index in IntArray(3) { it }) {
             val modbus = Modbus(device?.device?.name, modbusMaster)
-            val pane1 = ControlPaneLeadFluidPumpX(this, modbus, index + 1)
+            val pane1 = ControlPaneLeadFluidPumpX(this, modbus, index + 3)
             val params1 = GridLayout.LayoutParams()
             params1.columnSpec = GridLayout.spec(index % 3)
             params1.rowSpec = GridLayout.spec(index / 3)

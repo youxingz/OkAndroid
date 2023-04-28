@@ -28,7 +28,11 @@ public class OkWebView {
         webViewMap.put(name, this);
     }
 
-    public static OkWebView getInstance(String name) {
+    public WebView getWebView() {
+        return webView;
+    }
+
+    public OkWebView getInstance(String name) {
         if (webViewMap == null) return null;
         return webViewMap.get(name);
     }

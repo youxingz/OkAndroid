@@ -8,6 +8,9 @@ import androidx.annotation.RequiresApi;
 import org.eclipse.milo.opcua.stack.core.util.SelfSignedCertificateBuilder;
 import org.eclipse.milo.opcua.stack.core.util.SelfSignedCertificateGenerator;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -27,21 +30,20 @@ public class KeyStoreLoader {
     private static final String CLIENT_ALIAS = "client-ai";
     private static final char[] PASSWORD = "password".toCharArray();
 
-    private final static String TAG = "KeyStoreLoader";
+    private final static String TAG = "io.opcua_c.KeyStoreLoader";
 
     private X509Certificate[] clientCertificateChain;
     private X509Certificate clientCertificate;
     private KeyPair clientKeyPair;
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    KeyStoreLoader load(Path baseDir) throws Exception {
-        KeyStore keyStore = KeyStore.getInstance("PKCS12");
+    KeyStoreLoader load(String baseDir) throws Exception {
+        java.security.KeyStore keyStore = java.security.KeyStore.getInstance("PKCS12");
 
-        Path serverKeyStore = baseDir.resolve("opcua-client.pfx");
+        String serverKeyStore = baseDir + "/opcua-client.pfx";
 
-        Log.i(TAG, String.format("Loading KeyStore at %s", serverKeyStore));
-
-        if (!Files.exists(serverKeyStore)) {
+        //        Log.i(TAG, String.format("Loading KeyStore at %s", serverKeyStore));
+        File keyFile = new File(serverKeyStore);
+        if (!keyFile.exists()) {
             keyStore.load(null, PASSWORD);
 
             KeyPair keyPair = SelfSignedCertificateGenerator.generateRsaKeyPair(2048);
@@ -61,11 +63,11 @@ public class KeyStoreLoader {
             X509Certificate certificate = builder.build();
 
             keyStore.setKeyEntry(CLIENT_ALIAS, keyPair.getPrivate(), PASSWORD, new X509Certificate[]{certificate});
-            try (OutputStream out = Files.newOutputStream(serverKeyStore)) {
+            try (OutputStream out = new FileOutputStream(keyFile)) {
                 keyStore.store(out, PASSWORD);
             }
         } else {
-            try (InputStream in = Files.newInputStream(serverKeyStore)) {
+            try (InputStream in = new FileInputStream(keyFile)) {
                 keyStore.load(in, PASSWORD);
             }
         }

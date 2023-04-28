@@ -14,6 +14,7 @@ import com.serotonin.modbus4j.exception.ModbusTransportException
 import com.serotonin.modbus4j.msg.WriteRegisterRequest
 import io.okandroid.OkAndroid
 import io.okandroid.sensor.motor.LeadFluidPumpQueued
+import io.okandroid.sensor.motor.ShenchenPumpQueued
 import io.okandroid.serial.SerialDevice
 import io.okandroid.serial.modbus.Modbus
 import io.reactivex.rxjava3.core.Flowable
@@ -28,7 +29,7 @@ class ControlPaneLeadFluidPumpX(
     private var slaveId: Int
 ) : LinearLayout(context) {
 
-    private lateinit var motor: LeadFluidPumpQueued
+    private lateinit var motor: ShenchenPumpQueued // LeadFluidPumpQueued
     private lateinit var titleText: TextView
     private lateinit var btnTurn: ToggleButton
 
@@ -75,7 +76,7 @@ class ControlPaneLeadFluidPumpX(
 //            val modbus = Modbus(device)
             modbusMaster = modbus.master()
             modbusMaster.retries = 2
-            motor = LeadFluidPumpQueued(modbus, slaveId)
+            motor = ShenchenPumpQueued(modbus, slaveId)
         } catch (e: ModbusTransportException) {
 //            e.printStackTrace()
         }
@@ -187,20 +188,20 @@ class ControlPaneLeadFluidPumpX(
                 isExceptionInWorking = false
                 return@setOnCheckedChangeListener
             }
-            motor.turn(isChecked).subscribeOn(Schedulers.io()).observeOn(OkAndroid.mainThread())
-                .subscribe({
-                    Snackbar.make(
-                        this, "【蠕动泵 $slaveId 号】${if (isChecked) "启动" else "急停"}成功", 0
-                    ).show()
-                }, { e ->
-                    Snackbar.make(
-                        this, "【蠕动泵 $slaveId 号】${if (isChecked) "启动" else "急停"}失败", 0
-                    ).show()
-                    isExceptionInWorking = true
-                    btnTurn.isChecked = false
-                    working = false
-                    e.printStackTrace()
-                })
+//            motor.turn(isChecked).subscribeOn(Schedulers.io()).observeOn(OkAndroid.mainThread())
+//                .subscribe({
+//                    Snackbar.make(
+//                        this, "【蠕动泵 $slaveId 号】${if (isChecked) "启动" else "急停"}成功", 0
+//                    ).show()
+//                }, { e ->
+//                    Snackbar.make(
+//                        this, "【蠕动泵 $slaveId 号】${if (isChecked) "启动" else "急停"}失败", 0
+//                    ).show()
+//                    isExceptionInWorking = true
+//                    btnTurn.isChecked = false
+//                    working = false
+//                    e.printStackTrace()
+//                })
             working = isChecked
             // loop in thread
             if (isChecked) {
@@ -229,7 +230,8 @@ class ControlPaneLeadFluidPumpX(
                 }
                 disposableVelocity = motor.velocityMulti(200).subscribeOn(Schedulers.newThread())
                     .observeOn(OkAndroid.mainThread()).subscribe({
-                        velocityText.text = "${it / 10} RPM"
+//                        velocityText.text = "${it / 10} RPM"
+                        velocityText.text = "${it / 1} RPM"
                     }, { e ->
                         e.printStackTrace()
                         e.localizedMessage?.let { context.appendLog(it) }
@@ -258,7 +260,7 @@ class ControlPaneLeadFluidPumpX(
         clearToggle.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
                 val direction = if (clearDirectionToggle.isChecked) 0 else 1
-                setPeriodItem("-", 500, direction, 0)
+                setPeriodItem("-", 1, 500, direction, 0)
             }
             try {
                 if (isExceptionInClearing) {
@@ -291,7 +293,7 @@ class ControlPaneLeadFluidPumpX(
         }
         clearDirectionToggle.setOnCheckedChangeListener { _, isChecked ->
             val direction = if (isChecked) 0 else 1
-            setPeriodItem("-", 500, direction, 0)
+            setPeriodItem("-", 1, 500, direction, 0)
         }
 
         // address
@@ -375,7 +377,7 @@ class ControlPaneLeadFluidPumpX(
             val speed2 = parseInt(velocityEdit2.text.toString())
             val time2 = parseInt(timeEdit2.text.toString())
             val direction2 = if (directionToggle2.isChecked) 0 else 1
-            setPeriodItem("1", speed1, direction1, time1.toLong()).subscribe({
+            setPeriodItem("1", 1, speed1, direction1, time1.toLong()).subscribe({
                 if (it is Int) {
                     return@subscribe
                 }
@@ -384,7 +386,7 @@ class ControlPaneLeadFluidPumpX(
                         "[1]: ${if (direction1 == 0) "顺时针" else "逆时针"} ($direction1) | $speed1 rpm"
                     Log.i("WORKING", log)
 //                    context.appendLog("RUNNING: $log")
-                    setPeriodItem("2", speed2, direction2, time2.toLong()).subscribe({
+                    setPeriodItem("2", 1, speed2, direction2, time2.toLong()).subscribe({
                         if (it is Int) {
                             return@subscribe
                         }
@@ -416,6 +418,7 @@ class ControlPaneLeadFluidPumpX(
     @SuppressLint("CheckResult")
     private fun setPeriodItem(
         tag: String,
+        turnOn: Int,
         speed: Int,
         direction: Int,
         time: Long
@@ -423,7 +426,8 @@ class ControlPaneLeadFluidPumpX(
         return Single.concat(
             motor.waitCommand(time),
 //            motor.waitCommand(0), // 不做等待
-            motor.directionAndVelocity(speed * 10, direction)
+//            motor.directionAndVelocity(speed * 10, direction)
+            motor.directionAndVelocityAndTurnOn(speed * 1, direction, turnOn)
         )
 //        motor.directionAndVelocity(speed * 10, direction)
             .observeOn(OkAndroid.mainThread())

@@ -1,137 +1,149 @@
 package io.okandroid.opcua;
 
+import static com.google.common.collect.Lists.newArrayList;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
 import android.os.Build;
-import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
-import org.eclipse.milo.opcua.sdk.client.api.identity.AnonymousProvider;
-import org.eclipse.milo.opcua.stack.client.security.DefaultClientCertificateValidator;
-import org.eclipse.milo.opcua.stack.core.Stack;
-import org.eclipse.milo.opcua.stack.core.security.DefaultTrustListManager;
-import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
+import org.eclipse.milo.opcua.sdk.client.api.UaClient;
+import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaMonitoredItem;
+import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription;
+import org.eclipse.milo.opcua.stack.core.AttributeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
+import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
+import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
+import org.eclipse.milo.opcua.stack.core.types.enumerated.MonitoringMode;
+import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn;
+import org.eclipse.milo.opcua.stack.core.types.structured.MonitoredItemCreateRequest;
+import org.eclipse.milo.opcua.stack.core.types.structured.MonitoringParameters;
+import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.Security;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
-@RequiresApi(api = Build.VERSION_CODES.O)
+import io.okandroid.exception.OkOPCException;
+import io.reactivex.rxjava3.core.Observable;
+
 public class OpcClient {
-    static {
-        // Required for SecurityPolicy.Aes256_Sha256_RsaPss
-        Security.addProvider(new BouncyCastleProvider());
-    }
+    private OpcUaClient client;
+    private UaClient uaClient;
 
-    private final static String TAG = "OpcClient";
+    private boolean isConnected = false;
 
-    private final CompletableFuture<OpcUaClient> future = new CompletableFuture<>();
-    private DefaultTrustListManager trustListManager;
-    private Runner runner;
-
-    public OpcClient(Runner runner) {
-        this.runner = runner;
-    }
-
-    public void start() {
-        runClient();
-    }
-
-    private OpcUaClient createClient() throws Exception {
-        Path securityTempDir = Paths.get(System.getProperty("java.io.tmpdir"), "client", "security");
-        Files.createDirectories(securityTempDir);
-        if (!Files.exists(securityTempDir)) {
-            throw new Exception("unable to create security dir: " + securityTempDir);
-        }
-
-        File pkiDir = securityTempDir.resolve("pki").toFile();
-
-        Log.i(TAG, String.format("security dir: %s", securityTempDir.toAbsolutePath()));
-        Log.i(TAG, String.format("security pki dir: %s", pkiDir.getAbsolutePath()));
-
-        KeyStoreLoader loader = new KeyStoreLoader().load(securityTempDir);
-
-        trustListManager = new DefaultTrustListManager(pkiDir);
-
-        DefaultClientCertificateValidator certificateValidator =
-                new DefaultClientCertificateValidator(trustListManager);
-
-        return OpcUaClient.create(
-                "opc.tcp://10.168.1.9:4840",
-                endpoints -> endpoints.stream().findFirst(),
-                configBuilder -> configBuilder
-                        .setApplicationName(LocalizedText.english("eclipse milo opc-ua client"))
-                        .setApplicationUri("urn:eclipse:milo:examples:client")
-                        .setKeyPair(loader.getClientKeyPair())
-                        .setCertificate(loader.getClientCertificate())
-                        .setCertificateChain(loader.getClientCertificateChain())
-                        .setCertificateValidator(certificateValidator)
-                        .setIdentityProvider(new AnonymousProvider()) // 匿名用户
-                        .setRequestTimeout(uint(5000))
-                        .build()
-        );
-    }
-
-    private void runClient() {
+    public synchronized void connect(String url) throws OkOPCException {
+        System.out.println("Connecting... " + url);
         try {
-            OpcUaClient client = createClient();
-            future.whenCompleteAsync((c, ex) -> {
-                if (ex != null) {
-                    Log.e(TAG, String.format("Error running example: %s", ex.getMessage()));
-                }
-
-                try {
-                    client.disconnect().get();
-                    Stack.releaseSharedResources();
-                } catch (InterruptedException | ExecutionException e) {
-                    Log.e(TAG, String.format("Error disconnecting: %s", e.getMessage()));
-                }
-
-                try {
-                    Thread.sleep(1000);
-                    Log.i(TAG, "Exit....");
-                    // System.exit(0);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            });
-
-            try {
-                runner.run(client, future);
-                future.get(15, TimeUnit.SECONDS);
-            } catch (Throwable t) {
-                Log.e(TAG, String.format("Error running client: %s", t.getMessage()));
-                future.completeExceptionally(t);
+            if (client == null) {
+                client = OpcClientFactory.createClient(url);
             }
-        } catch (Throwable t) {
-            Log.e(TAG, String.format("Error getting client: %s", t.getMessage()));
-            future.completeExceptionally(t);
+            client.disconnect().get();
+            uaClient = client.connect().get(); // wait until connected.
+            isConnected = true;
+        } catch (Exception e) {
+            isConnected = false;
+            throw new OkOPCException(e.getMessage());
+        }
+    }
 
+    public boolean isConnected() {
+        return isConnected;
+    }
+
+    public void disconnect() throws ExecutionException, InterruptedException {
+        if (uaClient != null) {
+            uaClient.disconnect().get();
+        }
+        if (client != null) {
+            client.disconnect().get();
+        }
+    }
+
+    public CompletableFuture<DataValue> read(NodeId nodeId) {
+        return uaClient.readValue(0.0, TimestampsToReturn.Both, nodeId);
+    }
+
+    public CompletableFuture<List<DataValue>> read(List<NodeId> nodeIds) {
+        return uaClient.readValues(0.0, TimestampsToReturn.Both, nodeIds);
+    }
+
+    public CompletableFuture<StatusCode> write(NodeId nodeId, DataValue value) {
+        return uaClient.writeValue(nodeId, value);
+    }
+
+    public CompletableFuture<List<StatusCode>> write(List<NodeId> nodeIds, List<DataValue> values) {
+        return uaClient.writeValues(nodeIds, values);
+    }
+
+    public Observable<NodeValue> observeValue(NodeId nodeId) {
+        return Observable.create(emitter -> {
             try {
-                Thread.sleep(1000);
-                Log.i(TAG, "System Exit.");
-                // System.exit(0);
-            } catch (InterruptedException e) {
+                // 1000.0 ms
+                UaSubscription subscription = uaClient.getSubscriptionManager().createSubscription(1000.0).get();
+                ReadValueId readValueId = new ReadValueId(nodeId, AttributeId.Value.uid(), null, QualifiedName.NULL_VALUE);
+                UInteger clientHandle = subscription.nextClientHandle();
+                MonitoringParameters parameters = new MonitoringParameters(
+                        clientHandle,
+                        1000.0,     // sampling interval
+                        null,       // filter, null means use default
+                        uint(10),   // queue size
+                        true        // discard oldest // TODO! 确认参数是否会过滤未改变的值
+                );
+
+                MonitoredItemCreateRequest request = new MonitoredItemCreateRequest(
+                        readValueId,
+                        MonitoringMode.Reporting,
+                        parameters
+                );
+                List<UaMonitoredItem> items = subscription.createMonitoredItems(
+                        TimestampsToReturn.Both,
+                        newArrayList(request),
+                        (item, index) -> item.setValueConsumer((item1, value) -> {
+                            if (!emitter.isDisposed()) {
+                                emitter.onNext(new NodeValue(item1, value, index));
+                            }
+                        })
+                ).get();
+                for (UaMonitoredItem item : items) {
+                    if (item.getStatusCode().isGood()) {
+                        // logger.info("item created for nodeId={}", item.getReadValueId().getNodeId());
+                    } else {
+                        // logger.warn("failed to create item for nodeId={} (status={})", item.getReadValueId().getNodeId(), item.getStatusCode());
+                    }
+                }
+                Thread.sleep(Long.MAX_VALUE); // listen forever.
+            } catch (ExecutionException | InterruptedException e) {
                 e.printStackTrace();
+                if (!emitter.isDisposed()) {
+                    emitter.onError(e);
+                }
             }
-        }
-
-        try {
-            Thread.sleep(999_999_999);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        });
     }
 
-    public interface Runner {
-        void run(OpcUaClient client, CompletableFuture<OpcUaClient> future);
+    public static class NodeValue {
+        public UaMonitoredItem item;
+        public DataValue value;
+        public int index;
+
+        public NodeValue(UaMonitoredItem item, DataValue value, int index) {
+            this.item = item;
+            this.value = value;
+            this.index = index;
+        }
+
+        @Override
+        public String toString() {
+            return "NodeValue{" +
+                    "item=" + item +
+                    ", value=" + value +
+                    ", index=" + index +
+                    '}';
+        }
     }
 }
