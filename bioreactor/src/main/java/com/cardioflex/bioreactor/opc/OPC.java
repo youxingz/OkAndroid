@@ -7,9 +7,9 @@ public class OPC {
 
     private static final String endpointUrl = "opc.tcp://10.168.1.9:4840";
 
-    private static OpcClient client;
+    private static volatile OpcClient client;
 
-    public static OpcClient getClient() throws OkOPCException {
+    synchronized public static OpcClient getClient() throws OkOPCException {
         if (client == null || !client.isConnected()) {
             client = new OpcClient();
             client.connect(endpointUrl);
