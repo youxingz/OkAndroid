@@ -12,7 +12,7 @@ import io.okandroid.OkAndroid
 import io.okandroid.sensor.motor.LeadShinePr0
 import io.okandroid.sensor.motor.LeadShinePr0Observable
 import io.okandroid.serial.SerialDevice
-import io.okandroid.serial.modbus.Modbus
+import io.okandroid.serial.modbus.ModbusQueued
 import io.okandroid.serial.modbus.ModbusMasterCreator
 import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
@@ -60,7 +60,10 @@ class ControlPaneLeadShineMotor(
 
     private fun initModbus() {
         try {
-            val modbus = Modbus(device.device.name, ModbusMasterCreator.create(device))
+            val modbus = ModbusQueued(
+                device.device.name,
+                ModbusMasterCreator.create(device)
+            )
             val modbusMaster = modbus.master()
             modbusMaster.retries = 3
             motor = LeadShinePr0Observable(LeadShinePr0(modbusMaster, slaveId))
@@ -68,7 +71,7 @@ class ControlPaneLeadShineMotor(
                 .subscribe({}, { e ->
                     e.printStackTrace()
                     e.localizedMessage?.let { context.appendLog(it) }
-                    Snackbar.make(this, "【电机 $slaveId 号】速度模式设置失败", 0).show()
+//                    Snackbar.make(this, "【电机 $slaveId 号】速度模式设置失败", 0).show()
                 })
         } catch (e: ModbusTransportException) {
             e.printStackTrace()

@@ -10,8 +10,7 @@ import com.serotonin.modbus4j.msg.WriteRegisterRequest;
 import com.serotonin.modbus4j.msg.WriteRegistersRequest;
 
 import io.okandroid.OkAndroid;
-import io.okandroid.serial.modbus.Modbus;
-import io.okandroid.serial.modbus.ModbusWithoutResp;
+import io.okandroid.serial.modbus.ModbusQueued;
 import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.Single;
@@ -21,10 +20,10 @@ import io.reactivex.rxjava3.disposables.Disposable;
 
 public class ShenchenPumpQueued {
 
-    private Modbus master;
+    private ModbusQueued master;
     private int slaveId;
 
-    public ShenchenPumpQueued(Modbus modbusMaster, int slaveId) {
+    public ShenchenPumpQueued(ModbusQueued modbusMaster, int slaveId) {
         this.master = modbusMaster;
         this.slaveId = slaveId;
     }

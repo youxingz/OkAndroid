@@ -8,7 +8,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.OkAndroid">
         <activity
-            android:name=".leadfluid_x.LiquidActivity"
+            android:name=".leadshine.LeadShine57Activity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -17,8 +17,11 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".leadshine.LeadShineActivity"
+            android:name=".leadfluid_x.LiquidActivity"
             android:exported="true" />
+        <activity
+            android:name=".leadshine.LeadShineActivity"
+            android:exported="true"></activity>
         <activity
             android:name=".pump.PumpActivity"
             android:exported="true">
@@ -32,7 +35,7 @@
         </activity>
         <activity
             android:name=".leadfluid.LeadFluidActivityX"
-            android:exported="true"></activity>
+            android:exported="true" />
     </application>
 
 </manifest>

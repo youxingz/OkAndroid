@@ -8,9 +8,8 @@ import android.widget.AdapterView.OnItemSelectedListener
 import androidx.appcompat.app.AppCompatActivity
 import com.cardioflex.motor.DeviceListAdapter
 import com.cardioflex.motor.R
-import com.cardioflex.motor.utils.parseInt
 import io.okandroid.serial.SerialDevice
-import io.okandroid.serial.modbus.Modbus
+import io.okandroid.serial.modbus.ModbusQueued
 import io.okandroid.serial.modbus.ModbusMasterCreator
 import java.io.File
 
@@ -98,7 +97,10 @@ class LeadFluidActivityX : AppCompatActivity() {
         val modbusMaster = ModbusMasterCreator.create(device)
         modbusMaster.enableDebug(true)
         for (index in IntArray(3) { it }) {
-            val modbus = Modbus(device?.device?.name, modbusMaster)
+            val modbus = ModbusQueued(
+                device?.device?.name,
+                modbusMaster
+            )
             val pane1 = ControlPaneLeadFluidPumpX(this, modbus, index + 3)
             val params1 = GridLayout.LayoutParams()
             params1.columnSpec = GridLayout.spec(index % 3)

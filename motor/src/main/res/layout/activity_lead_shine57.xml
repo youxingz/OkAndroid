@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".leadshine.LeadShine57Activity">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/button_on"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="启动"
+            android:onClick="onButtonClicked"
+            tools:layout_editor_absoluteX="85dp"
+            tools:layout_editor_absoluteY="117dp" />
+
+        <Button
+            android:id="@+id/button_off"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="停止"
+            android:onClick="onButtonClicked"
+            tools:layout_editor_absoluteX="213dp"
+            tools:layout_editor_absoluteY="113dp" />
+
+        <Button
+            android:id="@+id/button_v300"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="转速300"
+            android:onClick="onButtonClicked"
+            tools:layout_editor_absoluteX="213dp"
+            tools:layout_editor_absoluteY="113dp" />
+
+        <Button
+            android:id="@+id/button_v0"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="转速0"
+            android:onClick="onButtonClicked"
+            tools:layout_editor_absoluteX="213dp"
+            tools:layout_editor_absoluteY="113dp" />
+
+        <Button
+            android:id="@+id/button_dir_l2r"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="方向l2r"
+            android:onClick="onButtonClicked"
+            tools:layout_editor_absoluteX="213dp"
+            tools:layout_editor_absoluteY="113dp" />
+
+        <Button
+            android:id="@+id/button_dir_r2l"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="方向r2l"
+            android:onClick="onButtonClicked"
+            tools:layout_editor_absoluteX="213dp"
+            tools:layout_editor_absoluteY="113dp" />
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/log_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="TextView"
+        tools:layout_editor_absoluteX="83dp"
+        tools:layout_editor_absoluteY="224dp" />
+</LinearLayout>

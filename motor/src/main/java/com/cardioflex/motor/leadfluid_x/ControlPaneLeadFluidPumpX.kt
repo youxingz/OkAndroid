@@ -13,10 +13,8 @@ import com.serotonin.modbus4j.ModbusMaster
 import com.serotonin.modbus4j.exception.ModbusTransportException
 import com.serotonin.modbus4j.msg.WriteRegisterRequest
 import io.okandroid.OkAndroid
-import io.okandroid.sensor.motor.LeadFluidPumpQueued
 import io.okandroid.sensor.motor.ShenchenPumpQueued
-import io.okandroid.serial.SerialDevice
-import io.okandroid.serial.modbus.Modbus
+import io.okandroid.serial.modbus.ModbusQueued
 import io.reactivex.rxjava3.core.Flowable
 import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.disposables.Disposable
@@ -25,7 +23,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers
 
 class ControlPaneLeadFluidPumpX(
     private val context: LeadFluidActivityX,
-    private val modbus: Modbus,
+    private val modbus: ModbusQueued,
     private var slaveId: Int
 ) : LinearLayout(context) {
 

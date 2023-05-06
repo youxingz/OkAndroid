@@ -10,7 +10,7 @@ import com.serotonin.modbus4j.msg.ReadHoldingRegistersResponse;
 import com.serotonin.modbus4j.msg.WriteRegisterRequest;
 
 import io.okandroid.OkAndroid;
-import io.okandroid.serial.modbus.Modbus;
+import io.okandroid.serial.modbus.ModbusQueued;
 import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.Single;
@@ -20,10 +20,10 @@ import io.reactivex.rxjava3.disposables.Disposable;
 
 public class LeadFluidPumpQueued {
 
-    private Modbus master;
+    private ModbusQueued master;
     private int slaveId;
 
-    public LeadFluidPumpQueued(Modbus modbusMaster, int slaveId) {
+    public LeadFluidPumpQueued(ModbusQueued modbusMaster, int slaveId) {
         this.master = modbusMaster;
         this.slaveId = slaveId;
     }

@@ -1,17 +1,11 @@
 package com.cardioflex.motor.leadfluid_x;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.content.DialogInterface;
 import android.os.Bundle;
 import android.serialport.SerialPortFinder;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.Button;
-import android.widget.CompoundButton;
-import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.RadioButton;
 import android.widget.TextView;
@@ -27,7 +21,7 @@ import java.io.IOException;
 import io.okandroid.OkAndroid;
 import io.okandroid.sensor.motor.LeadFluidPumpQueued;
 import io.okandroid.serial.SerialDevice;
-import io.okandroid.serial.modbus.Modbus;
+import io.okandroid.serial.modbus.ModbusQueued;
 import io.okandroid.serial.modbus.ModbusMasterCreator;
 import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.SingleObserver;
@@ -209,7 +203,7 @@ public class LiquidActivity extends AppCompatActivity {
         SerialDevice device = SerialDevice.newBuilder(defaultDeviceName, 9600).dataBits(8).parity(2).stopBits(1).build();
         ModbusMaster modbusMaster = ModbusMasterCreator.create(device);
         modbusMaster.enableDebug(true);
-        Modbus modbus = new Modbus(defaultDeviceName, modbusMaster);
+        ModbusQueued modbus = new ModbusQueued(defaultDeviceName, modbusMaster);
         pump1 = new LeadFluidPumpQueued(modbus, 1);
         pump2 = new LeadFluidPumpQueued(modbus, 2);
     }

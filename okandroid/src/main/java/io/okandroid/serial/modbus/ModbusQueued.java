@@ -13,7 +13,7 @@ import io.okandroid.exception.OkModbusException;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.core.SingleEmitter;
 
-public class Modbus {
+public class ModbusQueued {
     // private SerialDevice device;
     private String filename;
     private ModbusMaster modbusMaster;
@@ -21,7 +21,7 @@ public class Modbus {
     private Queue<OkModbusRequest> requestQueue = new LinkedBlockingQueue<>();
     private volatile boolean isWorking;
 
-    public Modbus(String filename, ModbusMaster master) {
+    public ModbusQueued(String filename, ModbusMaster master) {
         this.filename = filename;
         this.modbusMaster = master;
     }

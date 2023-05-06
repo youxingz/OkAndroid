@@ -14,7 +14,7 @@ import io.okandroid.OkAndroid
 import io.okandroid.sensor.motor.LeadFluidPump
 import io.okandroid.sensor.motor.LeadFluidPumpObservable
 import io.okandroid.serial.SerialDevice
-import io.okandroid.serial.modbus.Modbus
+import io.okandroid.serial.modbus.ModbusQueued
 import io.okandroid.serial.modbus.ModbusMasterCreator
 import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
@@ -51,7 +51,10 @@ class ControlPaneLeadFluidPump(
 
     private fun initModbus() {
         try {
-            val modbus = Modbus(device.device.name, ModbusMasterCreator.create(device))
+            val modbus = ModbusQueued(
+                device.device.name,
+                ModbusMasterCreator.create(device)
+            )
             val modbusMaster = modbus.master()
             modbusMaster.retries = 5
             motor = LeadFluidPumpObservable(LeadFluidPump(modbusMaster, slaveId))
