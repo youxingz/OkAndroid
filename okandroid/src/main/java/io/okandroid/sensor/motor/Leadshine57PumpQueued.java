@@ -33,8 +33,8 @@ public class Leadshine57PumpQueued {
     private volatile int velocity = 0;
     private volatile boolean working = false;
 
-    public Leadshine57PumpQueued(ModbusWithoutResp modbusMaster, int slaveId) {
-        this.master = modbusMaster.master();
+    public Leadshine57PumpQueued(ModbusMaster modbusMaster, int slaveId) {
+        this.master = modbusMaster;
         this.slaveId = slaveId;
     }
 

@@ -46,8 +46,7 @@ public class LeadShine57Activity extends AppCompatActivity {
         SerialDevice device = SerialDevice.newBuilder(defaultDeviceName, 38400).dataBits(8).parity(0).stopBits(1).build();
         ModbusMaster modbusMaster = ModbusMasterCreator.create(device);
         modbusMaster.enableDebug(true);
-        ModbusWithoutResp modbus = new ModbusWithoutResp(defaultDeviceName, modbusMaster);
-        motor = new Leadshine57PumpQueued(modbus, 1);
+        motor = new Leadshine57PumpQueued(modbusMaster, 1);
     }
 
     private Disposable disposable;
