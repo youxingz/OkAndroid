@@ -7,6 +7,10 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import com.cardioflex.bioreactor.motor.PulseMotorWorker;
+
+import java.io.IOException;
+
 import io.okandroid.js.OkWebView;
 
 public class OkWebClient extends WebViewClient {
@@ -71,7 +75,13 @@ public class OkWebClient extends WebViewClient {
         switch (uri.getPath()) {
             case "/index.html": {
                 PageDashboard.setCoreActivity(coreActivity);
-                // PageDashboard.start();
+                PageDashboard.start();
+                // start motor by modbus
+                try {
+                    PulseMotorWorker.reset();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 // PageDashboard.destroy(); // 进入其他页面的时候需要执行销毁操作
                 break;
             }

@@ -1,18 +1,36 @@
 package com.cardioflex.bioreactor.motor;
 
+import com.cardioflex.bioreactor.CoreActivity;
+import com.cardioflex.bioreactor.x.EventPayload;
+import com.serotonin.modbus4j.exception.ModbusTransportException;
+
 import io.okandroid.OkAndroid;
+import io.okandroid.js.EventResponse;
+import io.okandroid.sensor.motor.Leadshine57PumpQueued;
+import io.reactivex.rxjava3.annotations.NonNull;
+import io.reactivex.rxjava3.core.Observer;
+import io.reactivex.rxjava3.core.SingleObserver;
+import io.reactivex.rxjava3.disposables.Disposable;
 
 public class PulseMotor {
+    private static final String STREAM_NAME = "pulse-motor-stream";
     private String tag; // a1, a2, a3, b1, b2, b3
+
     // current:
-    private float velocity;
-    private boolean direction;
+    private volatile float velocity;
+    private volatile boolean direction;
 
     // config:
-    private PulseMotorConfig config;
-    private PulseMotorRunner motorRunner;
+    private volatile PulseMotorConfig config;
     private volatile boolean working;
 
+    private Leadshine57PumpQueued motor;
+    private Disposable motorDisposable;
+
+    public PulseMotor(String tag, Leadshine57PumpQueued modbus) {
+        this.tag = tag;
+        this.motor = modbus;
+    }
 
     public void setConfig(PulseMotorConfig config) {
         this.config = config;
@@ -27,28 +45,85 @@ public class PulseMotor {
                 throw new RuntimeException(e);
             }
             working = true;
+            try {
+                motor.turnOn().subscribeOn(OkAndroid.subscribeIOThread()).observeOn(OkAndroid.mainThread()).subscribe(new Observer<Integer>() {
+                    @Override
+                    public void onSubscribe(@NonNull Disposable d) {
+                        motorDisposable = d;
+                    }
+
+                    @Override
+                    public void onNext(@NonNull Integer speed) {
+                        // 变速
+                    }
+
+                    @Override
+                    public void onError(@NonNull Throwable e) {
+                        e.printStackTrace();
+                    }
+
+                    @Override
+                    public void onComplete() {
+
+                    }
+                });
+            } catch (ModbusTransportException e) {
+                e.printStackTrace();
+                return;
+            }
             while (working) {
                 try {
                     // modbus
                     // period1
                     direction = config.getD1();
                     velocity = config.getV1();
-                    motorRunner.exec(true, direction, velocity);
+                    // motorRunner.exec(true, direction, velocity);
+                    motor.changeVelocity((int) velocity);
+                    motor.changeDirection(direction);
+                    notify(true, direction, velocity);
                     Thread.sleep(config.getT1().longValue());
                     // period2
                     direction = config.getD2();
                     velocity = config.getV2();
-                    motorRunner.exec(true, direction, velocity);
+                    // motorRunner.exec(true, direction, velocity);
+                    motor.changeVelocity((int) velocity);
+                    motor.changeDirection(direction);
+                    notify(true, direction, velocity);
                     Thread.sleep(config.getT2().longValue());
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
+            stop();
+            notify(false, direction, 0f);
         });
     }
 
     public void stop() {
+        motor.turnOff();
         working = false;
+        if (motorDisposable != null && !motorDisposable.isDisposed()) {
+            motorDisposable.dispose();
+        }
+    }
+
+    private void notify(Boolean isOn, Boolean dir, Float velocity) {
+        CoreActivity.getOkWebViewInstance().sendToWeb(new EventPayload(STREAM_NAME, 200, new PulseMotorNotify(tag, isOn, dir, velocity))).observeOn(OkAndroid.subscribeIOThread()).observeOn(OkAndroid.mainThread()).subscribe(new SingleObserver<EventResponse>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable d) {
+                // Snackbar.make(CoreActivity.getOkWebViewInstance().getWebView(), "test", Snackbar.LENGTH_LONG).show();
+            }
+
+            @Override
+            public void onSuccess(@NonNull EventResponse eventResponse) {
+                // Log.i(TAG, eventResponse.toString());
+            }
+
+            @Override
+            public void onError(@NonNull Throwable e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     public static class PulseMotorConfig {
@@ -73,11 +148,11 @@ public class PulseMotor {
             this.t2 = t2;
         }
 
-        public Boolean getOn() {
+        public Boolean getIsOn() {
             return isOn;
         }
 
-        public void setOn(Boolean on) {
+        public void setIsOn(Boolean on) {
             isOn = on;
         }
 
@@ -127,6 +202,55 @@ public class PulseMotor {
 
         public void setT2(Float t2) {
             this.t2 = t2;
+        }
+    }
+
+    public static class PulseMotorNotify {
+        private String tag;
+        private Boolean isOn;
+        private Boolean d;
+        private Float v;
+
+        public PulseMotorNotify() {
+        }
+
+        public PulseMotorNotify(String tag, Boolean isOn, Boolean d, Float v) {
+            this.tag = tag;
+            this.isOn = isOn;
+            this.d = d;
+            this.v = v;
+        }
+
+        public String getTag() {
+            return tag;
+        }
+
+        public void setTag(String tag) {
+            this.tag = tag;
+        }
+
+        public Boolean getIsOn() {
+            return isOn;
+        }
+
+        public void setIsOn(Boolean on) {
+            isOn = on;
+        }
+
+        public Boolean getD() {
+            return d;
+        }
+
+        public void setD(Boolean d) {
+            this.d = d;
+        }
+
+        public Float getV() {
+            return v;
+        }
+
+        public void setV(Float v) {
+            this.v = v;
         }
     }
 }
