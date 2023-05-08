@@ -75,13 +75,7 @@ public class OkWebClient extends WebViewClient {
         switch (uri.getPath()) {
             case "/index.html": {
                 PageDashboard.setCoreActivity(coreActivity);
-                PageDashboard.start();
-                // start motor by modbus
-                try {
-                    PulseMotorWorker.reset();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                // PageDashboard.start();
                 // PageDashboard.destroy(); // 进入其他页面的时候需要执行销毁操作
                 break;
             }

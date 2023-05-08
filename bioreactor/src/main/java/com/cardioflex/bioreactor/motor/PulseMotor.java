@@ -36,6 +36,10 @@ public class PulseMotor {
         this.config = config;
     }
 
+    public PulseMotorConfig getConfig() {
+        return this.config;
+    }
+
     public void start() {
         OkAndroid.newThread().scheduleDirect(() -> {
             stop();
@@ -44,7 +48,10 @@ public class PulseMotor {
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            working = true;
+            working = config.getIsOn() != null && config.getIsOn();
+            if (!working) {
+                return;
+            }
             try {
                 motor.turnOn().subscribeOn(OkAndroid.subscribeIOThread()).observeOn(OkAndroid.mainThread()).subscribe(new Observer<Integer>() {
                     @Override
@@ -136,6 +143,13 @@ public class PulseMotor {
         private Float t2;
 
         public PulseMotorConfig() {
+            this.isOn = false;
+            this.d1 = false;
+            this.v1 = 0f;
+            this.t1 = 0f;
+            this.d2 = false;
+            this.v2 = 0f;
+            this.t2 = 0f;
         }
 
         public PulseMotorConfig(Boolean isOn, Boolean d1, Float v1, Float t1, Boolean d2, Float v2, Float t2) {

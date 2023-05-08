@@ -11,7 +11,10 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import com.cardioflex.bioreactor.motor.PulseMotorWorker;
 import com.cardioflex.bioreactor.x.XServer;
+
+import java.io.IOException;
 
 import io.okandroid.js.OkWebView;
 
@@ -27,6 +30,7 @@ public class CoreActivity extends AppCompatActivity {
         requestPermissions();
         initServer();
         initWebView();
+        startWorking();
     }
 
     public static OkWebView getOkWebViewInstance() {
@@ -50,6 +54,9 @@ public class CoreActivity extends AppCompatActivity {
     private void initServer() {
         XServer server = new XServer(this);
         server.start();
+    }
+
+    private void startWorking() {
     }
 
 
