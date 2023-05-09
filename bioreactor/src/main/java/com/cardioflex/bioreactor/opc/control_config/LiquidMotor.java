@@ -61,12 +61,15 @@ public class LiquidMotor {
             return;
         }
         OkAndroid.newThread().scheduleDirect(() -> {
-            // stop it
-            stop();
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+            if (working) {
+                // plz stop first
+                stop();
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                return;
             }
             working = true;
             while (working) {
@@ -90,10 +93,10 @@ public class LiquidMotor {
 
                     // wait
                     Thread.sleep(pump2Payload.getT().longValue());
-
+                    
+                    pump2Payload.setIsOn(false);
                     liquidMotor2.writeConfig(pump2Payload);
                     notify(2, pump2Payload);
-                    pump2Payload.setIsOn(false);
                 } catch (OkOPCException e) {
                     e.printStackTrace();
                 } catch (InterruptedException e) {

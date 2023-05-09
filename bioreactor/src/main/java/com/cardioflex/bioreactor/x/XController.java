@@ -121,20 +121,20 @@ public class XController {
                     LiquidMotor1.EquitPump1Payload payload = GsonUtils.getInstance().fromJson(body, LiquidMotor1.EquitPump1Payload.class);
                     LiquidMotor1.getInstance().writeConfig(payload);
                     LiquidMotor.getInstance().setLiquidMotor1(LiquidMotor1.getInstance(), payload);
-                    // // start it if the config was set. // 交给系统总开关控制
-                    // if (payload.getIsOn() != null && payload.getIsOn()) {
-                    //     LiquidMotor.getInstance().start();
-                    // }
+                    // start it if the config was set. // 交给系统总开关控制
+                    if (payload.getIsOn() != null && payload.getIsOn()) {
+                        LiquidMotor.getInstance().start();
+                    }
                     break;
                 }
                 case "liquid_out": {
                     LiquidMotor2.EquitPump2Payload payload = GsonUtils.getInstance().fromJson(body, LiquidMotor2.EquitPump2Payload.class);
                     LiquidMotor2.getInstance().writeConfig(payload);
                     LiquidMotor.getInstance().setLiquidMotor2(LiquidMotor2.getInstance(), payload);
-                    // // start it if the config was set. // 交给系统总开关控制
-                    // if (payload.getIsOn() != null && payload.getIsOn()) {
-                    //     LiquidMotor.getInstance().start();
-                    // }
+                    // start it if the config was set. // 交给系统总开关控制
+                    if (payload.getIsOn() != null && payload.getIsOn()) {
+                        LiquidMotor.getInstance().start();
+                    }
                     break;
                 }
                 case "motor_a1":
