@@ -75,7 +75,7 @@ public class OkWebClient extends WebViewClient {
         switch (uri.getPath()) {
             case "/index.html": {
                 PageDashboard.setCoreActivity(coreActivity);
-                // PageDashboard.start();
+                PageDashboard.start();
                 // PageDashboard.destroy(); // 进入其他页面的时候需要执行销毁操作
                 break;
             }

@@ -18,8 +18,6 @@ import io.okandroid.exception.OkOPCException;
 public class SensorPH extends ControlConfig<SensorPH.PHPayload> {
 
     private static SensorPH instance;
-    private List<NodeId> configNodeIdsRead;
-    private List<NodeId> configNodeIdsWrite;
 
     private SensorPH() {
         configNodeIdsRead = new ArrayList<>();

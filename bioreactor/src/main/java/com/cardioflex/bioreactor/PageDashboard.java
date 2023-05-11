@@ -29,7 +29,7 @@ public class PageDashboard {
     private static CoreActivity coreActivity;
     private static Disposable disposable;
 
-    public static int TIME_INTERVAL = 1000; // 每 5000ms 读一次数据
+    public static int TIME_INTERVAL = 5000; // 每 5000ms 读一次数据
 
     public static void setCoreActivity(CoreActivity coreActivity) {
         PageDashboard.coreActivity = coreActivity;
@@ -65,6 +65,7 @@ public class PageDashboard {
                     OpcClient client = OPC.getClient();
                     if (disposable != null && disposable.isDisposed()) {
                         client.disconnect();
+                        return;
                     }
                     CompletableFuture<List<DataValue>> future = client.read(nodeIds);
                     List<DataValue> dataValues = future.get(); // wait...

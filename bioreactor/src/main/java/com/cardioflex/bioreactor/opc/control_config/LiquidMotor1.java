@@ -18,8 +18,8 @@ import io.okandroid.exception.OkOPCException;
 public class LiquidMotor1 extends ControlConfig<LiquidMotor1.EquitPump1Payload> {
 
     private static LiquidMotor1 instance;
-    private List<NodeId> configNodeIdsRead;
-    private List<NodeId> configNodeIdsWrite;
+    // private List<NodeId> configNodeIdsRead;
+    // private List<NodeId> configNodeIdsWrite;
 
     private static float ratioVolPerRPM = 0.800000011920929f; // default
 

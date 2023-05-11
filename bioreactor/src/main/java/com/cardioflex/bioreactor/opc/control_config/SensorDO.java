@@ -18,8 +18,6 @@ import io.okandroid.exception.OkOPCException;
 public class SensorDO extends ControlConfig<SensorDO.DOPayload> {
 
     private static SensorDO instance;
-    private List<NodeId> configNodeIdsRead;
-    private List<NodeId> configNodeIdsWrite;
 
     private SensorDO() {
         configNodeIdsRead = new ArrayList<>();

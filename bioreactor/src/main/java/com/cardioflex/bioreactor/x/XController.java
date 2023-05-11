@@ -2,6 +2,10 @@ package com.cardioflex.bioreactor.x;
 
 import com.cardioflex.bioreactor.motor.PulseMotor;
 import com.cardioflex.bioreactor.motor.PulseMotorWorker;
+import com.cardioflex.bioreactor.opc.control_config.GasAir;
+import com.cardioflex.bioreactor.opc.control_config.GasCO2;
+import com.cardioflex.bioreactor.opc.control_config.GasN2;
+import com.cardioflex.bioreactor.opc.control_config.GasO2;
 import com.cardioflex.bioreactor.opc.control_config.LiquidMotor;
 import com.cardioflex.bioreactor.opc.control_config.LiquidMotor1;
 import com.cardioflex.bioreactor.opc.control_config.LiquidMotor2;
@@ -9,7 +13,6 @@ import com.cardioflex.bioreactor.opc.control_config.SensorDO;
 import com.cardioflex.bioreactor.opc.control_config.SensorPH;
 import com.cardioflex.bioreactor.opc.control_config.SensorTemp;
 import com.cardioflex.bioreactor.sys.Sys;
-import com.google.android.material.snackbar.Snackbar;
 import com.yanzhenjie.andserver.annotation.GetMapping;
 import com.yanzhenjie.andserver.annotation.PathVariable;
 import com.yanzhenjie.andserver.annotation.PostMapping;
@@ -85,6 +88,22 @@ public class XController {
                     PulseMotor.PulseMotorConfig data = PulseMotorWorker.getConfig(subtag);
                     return GsonUtils.getInstance().toJson(data);
                 }
+                case "gas_1": {
+                    GasAir.GasAirPayload data = GasAir.getInstance().readConfig();
+                    return GsonUtils.getInstance().toJson(data);
+                }
+                case "gas_2": {
+                    GasCO2.GasCO2Payload data = GasCO2.getInstance().readConfig();
+                    return GsonUtils.getInstance().toJson(data);
+                }
+                case "gas_3": {
+                    GasN2.GasN2Payload data = GasN2.getInstance().readConfig();
+                    return GsonUtils.getInstance().toJson(data);
+                }
+                case "gas_4": {
+                    GasO2.GasO2Payload data = GasO2.getInstance().readConfig();
+                    return GsonUtils.getInstance().toJson(data);
+                }
             }
         } catch (OkOPCException e) {
             response.setStatus(400);
@@ -146,6 +165,26 @@ public class XController {
                     String subtag = tag.substring(6);
                     PulseMotor.PulseMotorConfig payload = GsonUtils.getInstance().fromJson(body, PulseMotor.PulseMotorConfig.class);
                     PulseMotorWorker.updateConfig(subtag, payload);
+                    break;
+                }
+                case "gas_1": {
+                    GasAir.GasAirPayload payload = GsonUtils.getInstance().fromJson(body, GasAir.GasAirPayload.class);
+                    GasAir.getInstance().writeConfig(payload);
+                    break;
+                }
+                case "gas_2": {
+                    GasCO2.GasCO2Payload payload = GsonUtils.getInstance().fromJson(body, GasCO2.GasCO2Payload.class);
+                    GasCO2.getInstance().writeConfig(payload);
+                    break;
+                }
+                case "gas_3": {
+                    GasN2.GasN2Payload payload = GsonUtils.getInstance().fromJson(body, GasN2.GasN2Payload.class);
+                    GasN2.getInstance().writeConfig(payload);
+                    break;
+                }
+                case "gas_4": {
+                    GasO2.GasO2Payload payload = GsonUtils.getInstance().fromJson(body, GasO2.GasO2Payload.class);
+                    GasO2.getInstance().writeConfig(payload);
                     break;
                 }
             }

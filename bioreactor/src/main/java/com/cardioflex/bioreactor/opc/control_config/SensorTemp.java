@@ -18,8 +18,6 @@ import io.okandroid.exception.OkOPCException;
 public class SensorTemp extends ControlConfig<SensorTemp.TempPayload> {
 
     private static SensorTemp instance;
-    private List<NodeId> configNodeIdsRead;
-    private List<NodeId> configNodeIdsWrite;
 
     private SensorTemp() {
         configNodeIdsRead = new ArrayList<>();
