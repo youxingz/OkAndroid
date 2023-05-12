@@ -195,4 +195,36 @@ public class XController {
             return e.getMessage();
         }
     }
+
+    @PostMapping("/local-api/clear-dosage/{tag}")
+    public String clearDosage(@PathVariable("tag") String tag, HttpResponse response) {
+        try {
+            switch (tag) {
+                case "gas_1": {
+                    GasAir.getInstance().resetDosage();
+                    break;
+                }
+                case "gas_2": {
+                    GasCO2.getInstance().resetDosage();
+                    break;
+                }
+                case "gas_3": {
+                    GasN2.getInstance().resetDosage();
+                    break;
+                }
+                case "gas_4": {
+                    GasO2.getInstance().resetDosage();
+                    break;
+                }
+                default: {
+                    return "fail";
+                }
+            }
+            response.setStatus(201);
+            return "success";
+        } catch (OkOPCException e) {
+            e.printStackTrace();
+        }
+        return "fail";
+    }
 }

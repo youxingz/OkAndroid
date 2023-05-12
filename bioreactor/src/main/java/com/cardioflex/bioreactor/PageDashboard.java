@@ -56,6 +56,12 @@ public class PageDashboard {
         nodeIds.add(BioreactorNodeId.Temp_SV);
         nodeIds.add(BioreactorNodeId.Level_SV);
         nodeIds.add(BioreactorNodeId.Equit_Stir_SV);
+
+        // 是否开启
+        nodeIds.add(BioreactorNodeId.Equit_Air_ControlMode);
+        nodeIds.add(BioreactorNodeId.Equit_CO2_ControlMode);
+        nodeIds.add(BioreactorNodeId.Equit_N2_ControlMode);
+        nodeIds.add(BioreactorNodeId.Equit_O2_ControlMode);
         disposable = OkAndroid.newThread().scheduleDirect(() -> {
             Snackbar connError_ = Snackbar.make(CoreActivity.getOkWebViewInstance().getWebView(), "PLC 连接失败，正在重试...", Snackbar.LENGTH_SHORT);
             HashMap<String, Object> map = new HashMap<>(18);
@@ -90,6 +96,11 @@ public class PageDashboard {
                     map.put("sv_temp", OPCUtils.toJsonValue(dataValues.get(15)));
                     map.put("sv_level", OPCUtils.toJsonValue(dataValues.get(16)));
                     map.put("sv_stir", OPCUtils.toJsonValue(dataValues.get(17)));
+                    // status
+                    map.put("ison_air", OPCUtils.toJsonValue(dataValues.get(18)));
+                    map.put("ison_co2", OPCUtils.toJsonValue(dataValues.get(19)));
+                    map.put("ison_n2", OPCUtils.toJsonValue(dataValues.get(20)));
+                    map.put("ison_o2", OPCUtils.toJsonValue(dataValues.get(21)));
                     CoreActivity.getOkWebViewInstance().sendToWeb(new EventPayload("pv-sv-stream", 200, map)).observeOn(OkAndroid.subscribeIOThread()).observeOn(OkAndroid.mainThread()).subscribe(new SingleObserver<EventResponse>() {
                         @Override
                         public void onSubscribe(@NonNull Disposable d) {
@@ -113,6 +124,11 @@ public class PageDashboard {
                     current = System.currentTimeMillis();
                 } catch (OkOPCException e) {
                     e.printStackTrace();
+                    try {
+                        Thread.sleep(3000);
+                    } catch (InterruptedException ex) {
+                        throw new RuntimeException(ex);
+                    }
                     connError_.show();
                 } catch (Exception e) {
                     e.printStackTrace();
