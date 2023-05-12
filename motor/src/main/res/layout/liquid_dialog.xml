@@ -113,7 +113,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="min"
+            android:text="sec"
             android:textColor="@color/black" />
     </LinearLayout>
 </LinearLayout>

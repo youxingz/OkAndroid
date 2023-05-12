@@ -67,7 +67,7 @@ public class LiquidActivity extends AppCompatActivity {
                     for (int i = 0; i < adapter.getCount(); i++) {
                         ConfigListAdapter.ConfigModel model = adapter.getItem(i);
                         LeadFluidPumpQueued pump = "泵A".equals(model.pumpName) ? pump1 : pump2;
-                        if (model.minutes == 0) {
+                        if (model.seconds == 0) {
                             continue;
                         }
                         // stop others
@@ -185,7 +185,7 @@ public class LiquidActivity extends AppCompatActivity {
                             });
                         }
                         // time
-                        long ms = model.minutes * 60000;
+                        long ms = model.seconds * 1000;
                         // pump.waitCommand(ms);
                         Thread.sleep(ms); // 自己也休息这么久，这样保证时间的一致性
                     }

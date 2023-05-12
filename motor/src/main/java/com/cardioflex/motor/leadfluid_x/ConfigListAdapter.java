@@ -1,7 +1,6 @@
 package com.cardioflex.motor.leadfluid_x;
 
 import android.app.Activity;
-import android.content.DialogInterface;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,7 +30,7 @@ public class ConfigListAdapter extends ArrayAdapter<ConfigListAdapter.ConfigMode
         ConfigModel model = getItem(position);
         ((TextView) convertView.findViewById(R.id.pump_title)).setText(model.pumpName);
         ((TextView) convertView.findViewById(R.id.velocity_text)).setText(model.velocity + " rpm");
-        ((TextView) convertView.findViewById(R.id.time_text)).setText(model.minutes + " min");
+        ((TextView) convertView.findViewById(R.id.time_text)).setText(model.seconds + " min");
         ((TextView) convertView.findViewById(R.id.direction_text)).setText(model.isClockwise ? "顺时针🔁" : "逆时针🔄");
         convertView.findViewById(R.id.delete_btn).setOnClickListener(v -> {
             // delete self.
@@ -59,7 +58,7 @@ public class ConfigListAdapter extends ArrayAdapter<ConfigListAdapter.ConfigMode
                     e.printStackTrace();
                 }
                 model.velocity = velocity;
-                model.minutes = time;
+                model.seconds = time;
                 ConfigListAdapter.this.notifyDataSetChanged();
             });
             builder.setCancelable(false);
@@ -75,13 +74,13 @@ public class ConfigListAdapter extends ArrayAdapter<ConfigListAdapter.ConfigMode
     public static class ConfigModel {
         public String pumpName;
         public Double velocity;
-        public Integer minutes;
+        public Integer seconds;
         public boolean isClockwise;
 
-        public ConfigModel(String pumpName, Double velocity, Integer minutes, boolean isClockwise) {
+        public ConfigModel(String pumpName, Double velocity, Integer seconds, boolean isClockwise) {
             this.pumpName = pumpName;
             this.velocity = velocity;
-            this.minutes = minutes;
+            this.seconds = seconds;
             this.isClockwise = isClockwise;
         }
     }
