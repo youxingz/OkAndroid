@@ -30,7 +30,7 @@ public class ConfigListAdapter extends ArrayAdapter<ConfigListAdapter.ConfigMode
         ConfigModel model = getItem(position);
         ((TextView) convertView.findViewById(R.id.pump_title)).setText(model.pumpName);
         ((TextView) convertView.findViewById(R.id.velocity_text)).setText(model.velocity + " rpm");
-        ((TextView) convertView.findViewById(R.id.time_text)).setText(model.seconds + " min");
+        ((TextView) convertView.findViewById(R.id.time_text)).setText(model.seconds + " ms");
         ((TextView) convertView.findViewById(R.id.direction_text)).setText(model.isClockwise ? "顺时针🔁" : "逆时针🔄");
         convertView.findViewById(R.id.delete_btn).setOnClickListener(v -> {
             // delete self.

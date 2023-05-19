@@ -90,10 +90,12 @@ public class Leadshine57PumpQueued {
                                 emitter.onNext(currentV);
                             }
                         }
-                        Thread.sleep(40); // <50ms
+                        // Thread.sleep(40); // <50ms
+                        Thread.sleep(20); // <50ms
                     } catch (ModbusTransportException | InterruptedException e) {
                         e.printStackTrace();
                         if (!emitter.isDisposed()) {
+                            working = false;
                             emitter.onError(e);
                         }
                     }
@@ -109,6 +111,9 @@ public class Leadshine57PumpQueued {
         working = false;
     }
 
+    public boolean isWorking() {
+        return working;
+    }
 
     private boolean catchException(ObservableEmitter emitter, ModbusResponse response) {
         if (response.isException()) {

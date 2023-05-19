@@ -67,6 +67,52 @@
 
     </LinearLayout>
 
+    <LinearLayout
+        android:layout_marginLeft="12dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/button_ctrl_start"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="开始脚本 P-120RPM-100ms,N-10RPM-50ms"
+            android:onClick="onButtonClicked"
+            tools:layout_editor_absoluteX="213dp"
+            tools:layout_editor_absoluteY="113dp" />
+
+        <Button
+            android:id="@+id/button_ctrl_stop"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="停止脚本"
+            android:onClick="onButtonClicked"
+            tools:layout_editor_absoluteX="213dp"
+            tools:layout_editor_absoluteY="113dp" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <ToggleButton
+                android:id="@+id/button_log_enable"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textOff="开启日志"
+                android:textOn="日志已开启" />
+
+            <Button
+                android:id="@+id/button_log_clear"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="清除日志"
+                android:onClick="onButtonClicked"
+                tools:layout_editor_absoluteX="213dp"
+                tools:layout_editor_absoluteY="113dp" />
+        </LinearLayout>
+    </LinearLayout>
+
     <TextView
         android:id="@+id/log_text"
         android:layout_width="wrap_content"

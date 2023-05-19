@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    tools:context=".leadfluid_x.LiquidActivity">
+    tools:context=".leadfluid_x.LeadShine57PumpActivity2">
 
     <LinearLayout
         android:layout_width="360dp"
@@ -19,7 +19,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingBottom="6dp"
-            android:text="蠕动泵换液"
+            android:text="蠕动泵57"
             android:textColor="@color/black"
             android:textSize="18sp"
             android:textStyle="bold" />
