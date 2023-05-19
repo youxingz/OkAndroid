@@ -74,11 +74,62 @@
         android:orientation="vertical">
 
         <Button
-            android:id="@+id/button_ctrl_start"
+            android:id="@+id/button_ctrl_start1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="开始脚本 P-120RPM-100ms,N-10RPM-50ms"
-            android:onClick="onButtonClicked"
+            android:text="开始脚本1\nP: 300RPM | 200ms\nN: -10RPM | 80ms"
+            android:textAlignment="textStart"
+            android:onClick="onScriptButtonClicked"
+            tools:layout_editor_absoluteX="213dp"
+            tools:layout_editor_absoluteY="113dp" />
+
+        <Button
+            android:id="@+id/button_ctrl_start2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="开始脚本2\nP: 300RPM | 200ms\nN: 10RPM | 80ms"
+            android:textAlignment="textStart"
+            android:onClick="onScriptButtonClicked"
+            tools:layout_editor_absoluteX="213dp"
+            tools:layout_editor_absoluteY="113dp" />
+
+        <Button
+            android:id="@+id/button_ctrl_start3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="开始脚本3\nP: 200RPM | 200ms\nN: 40RPM | 80ms"
+            android:textAlignment="textStart"
+            android:onClick="onScriptButtonClicked"
+            tools:layout_editor_absoluteX="213dp"
+            tools:layout_editor_absoluteY="113dp" />
+
+        <Button
+            android:id="@+id/button_ctrl_start4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="开始脚本4\nP: 200RPM | 200ms\nN: -40RPM | 80ms"
+            android:textAlignment="textStart"
+            android:onClick="onScriptButtonClicked"
+            tools:layout_editor_absoluteX="213dp"
+            tools:layout_editor_absoluteY="113dp" />
+
+        <Button
+            android:id="@+id/button_ctrl_start5"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="开始脚本5\nP: 120RPM | 150ms\nN: 10RPM | 50ms"
+            android:textAlignment="textStart"
+            android:onClick="onScriptButtonClicked"
+            tools:layout_editor_absoluteX="213dp"
+            tools:layout_editor_absoluteY="113dp" />
+
+        <Button
+            android:id="@+id/button_ctrl_start6"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="开始脚本6\nP: 120RPM | 150ms\nN: 10RPM | 50ms"
+            android:textAlignment="textStart"
+            android:onClick="onScriptButtonClicked"
             tools:layout_editor_absoluteX="213dp"
             tools:layout_editor_absoluteY="113dp" />
 
@@ -113,11 +164,17 @@
         </LinearLayout>
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/log_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="TextView"
-        tools:layout_editor_absoluteX="83dp"
-        tools:layout_editor_absoluteY="224dp" />
+    <ScrollView
+        android:id="@+id/log_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/log_text"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="Log here."
+            tools:layout_editor_absoluteX="83dp"
+            tools:layout_editor_absoluteY="224dp" />
+    </ScrollView>
 </LinearLayout>

@@ -3,7 +3,8 @@ package com.cardioflex.motor.leadshine;
 import android.os.Bundle;
 import android.serialport.SerialPortFinder;
 import android.view.View;
-import android.widget.CompoundButton;
+import android.widget.Button;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
@@ -20,16 +21,15 @@ import io.okandroid.OkAndroid;
 import io.okandroid.sensor.motor.Leadshine57PumpQueued;
 import io.okandroid.serial.SerialDevice;
 import io.okandroid.serial.modbus.ModbusMasterCreator;
-import io.okandroid.serial.modbus.ModbusWithoutResp;
 import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.Observer;
-import io.reactivex.rxjava3.core.SingleObserver;
 import io.reactivex.rxjava3.disposables.Disposable;
 
 public class LeadShine57Activity extends AppCompatActivity {
     private Leadshine57PumpQueued motor;
     private TextView logTextView;
     private ToggleButton logEnableButton;
+    private ScrollView logContainerScrollView;
     private volatile boolean logEnable;
 
     @Override
@@ -38,6 +38,7 @@ public class LeadShine57Activity extends AppCompatActivity {
         setContentView(R.layout.activity_lead_shine57);
         logTextView = findViewById(R.id.log_text);
         logEnableButton = findViewById(R.id.button_log_enable);
+        logContainerScrollView = findViewById(R.id.log_container);
         try {
             initSerial();
         } catch (IOException e) {
@@ -45,9 +46,27 @@ public class LeadShine57Activity extends AppCompatActivity {
         }
         logEnableButton.setOnCheckedChangeListener((buttonView, isChecked) -> logEnable = isChecked);
         logEnableButton.setChecked(true);
+        updateConfig(200, 300, true, 30, 60, false);
     }
 
     private volatile boolean working;
+
+    private int v1 = 200;
+    private int t1 = 300;
+    private boolean d1 = true;
+    private int v2 = 30;
+    private int t2 = 60;
+    private boolean d2 = false;
+
+    public void updateConfig(int v1, int t1, boolean d1, int v2, int t2, boolean d2) {
+        this.t1 = t1;
+        this.t2 = t2;
+        this.v1 = v1;
+        this.v2 = v2;
+        this.d1 = d1;
+        this.d2 = d2;
+        // scriptTurnOnButton.setText(String.format("开始脚本 P-%dRPM-%dms,N-%dRPM-%dms", v1, t1, v2, t2));
+    }
 
     private void loop() {
         OkAndroid.newThread().scheduleDirect(() -> {
@@ -86,13 +105,13 @@ public class LeadShine57Activity extends AppCompatActivity {
                             }
                         });
                     }
-                    motor.changeVelocity(120);
-                    motor.changeDirection(true);
-                    Thread.sleep(100);
-                    motor.changeVelocity(10);
-                    motor.changeDirection(false);
-                    Thread.sleep(40);
-                    String message = String.format("[LOOP:%6d]: 120RPM(100ms) + 10RPM(50ms)", count++);
+                    motor.changeVelocity(v1);
+                    motor.changeDirection(d1);
+                    Thread.sleep(t1);
+                    motor.changeVelocity(v2);
+                    motor.changeDirection(d2);
+                    Thread.sleep(t2);
+                    String message = String.format("[LOOP:%6d]: %dRPM(%dms) + %dRPM(%dms)", count++, v1, t1, v2, t2);
                     OkAndroid.mainThread().scheduleDirect(() -> {
                         // logTextView.setText(logTextView.getText() + message);
                         addLog(message);
@@ -216,11 +235,11 @@ public class LeadShine57Activity extends AppCompatActivity {
                     // });
                     break;
                 }
-                case R.id.button_ctrl_start: {
-                    // start loop
-                    loop();
-                    break;
-                }
+                // case R.id.button_ctrl_start: {
+                //     // start loop
+                //     loop();
+                //     break;
+                // }
                 case R.id.button_ctrl_stop: {
                     working = false;
                     break;
@@ -235,10 +254,46 @@ public class LeadShine57Activity extends AppCompatActivity {
         }
     }
 
+    public void onScriptButtonClicked(View view) {
+        switch (view.getId()) {
+            case R.id.button_ctrl_start1: {
+                updateConfig(300, 200, true, 10, 80, false);
+                loop();
+                break;
+            }
+            case R.id.button_ctrl_start2: {
+                updateConfig(300, 200, true, 10, 80, true);
+                loop();
+                break;
+            }
+            case R.id.button_ctrl_start3: {
+                updateConfig(200, 200, true, 40, 80, true);
+                loop();
+                break;
+            }
+            case R.id.button_ctrl_start4: {
+                updateConfig(200, 200, true, 40, 80, false);
+                loop();
+                break;
+            }
+            case R.id.button_ctrl_start5: {
+                updateConfig(120, 150, true, 10, 50, true);
+                loop();
+                break;
+            }
+            case R.id.button_ctrl_start6: {
+                updateConfig(120, 150, true, 10, 50, false);
+                loop();
+                break;
+            }
+        }
+    }
+
     private void addLog(String message) {
         if (logEnable) {
             String log = System.currentTimeMillis() + "\t\t" + message + "\n";
             logTextView.setText(logTextView.getText() + log);
+            logContainerScrollView.fullScroll(View.FOCUS_DOWN);
         }
     }
 }
