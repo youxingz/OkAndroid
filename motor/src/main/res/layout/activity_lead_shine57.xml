@@ -65,6 +65,59 @@
             tools:layout_editor_absoluteX="213dp"
             tools:layout_editor_absoluteY="113dp" />
 
+        <Button
+            android:id="@+id/button_curr_1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="电流0.1A"
+            android:onClick="onButtonCurrClicked"
+            tools:layout_editor_absoluteX="213dp"
+            tools:layout_editor_absoluteY="113dp" />
+
+        <Button
+            android:id="@+id/button_curr_2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="电流0.5A"
+            android:onClick="onButtonCurrClicked"
+            tools:layout_editor_absoluteX="213dp"
+            tools:layout_editor_absoluteY="113dp" />
+
+        <Button
+            android:id="@+id/button_curr_3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="电流0.7A"
+            android:onClick="onButtonCurrClicked"
+            tools:layout_editor_absoluteX="213dp"
+            tools:layout_editor_absoluteY="113dp" />
+
+        <Button
+            android:id="@+id/button_curr_4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="电流1A"
+            android:onClick="onButtonCurrClicked"
+            tools:layout_editor_absoluteX="213dp"
+            tools:layout_editor_absoluteY="113dp" />
+
+        <Button
+            android:id="@+id/button_curr_5"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="电流1.2A"
+            android:onClick="onButtonCurrClicked"
+            tools:layout_editor_absoluteX="213dp"
+            tools:layout_editor_absoluteY="113dp" />
+
+        <Button
+            android:id="@+id/button_curr_6"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="电流1.5A"
+            android:onClick="onButtonCurrClicked"
+            tools:layout_editor_absoluteX="213dp"
+            tools:layout_editor_absoluteY="113dp" />
     </LinearLayout>
 
     <LinearLayout

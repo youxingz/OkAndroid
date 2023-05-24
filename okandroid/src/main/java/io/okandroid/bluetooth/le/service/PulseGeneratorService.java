@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import org.reactivestreams.Subscription;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -32,11 +33,36 @@ public class PulseGeneratorService extends AbstractService {
         return observeNotification(PULSE_GENERATOR_SERVICE, PULSE_WAVE_CHAR, PULSE_WAVE_DESC, new CharacteristicValueTaker<int[]>() {
             @Override
             public int[] takeValue(BluetoothGattCharacteristic characteristic) {
+                /**
+                 * 除去前 6 byte, 剩余内容为：time: 4byte, volt: 2byte
+                 */
                 byte[] resp = characteristic.getValue();
+                // System.out.println(Arrays.toString(resp));
+                int psize = (Byte.toUnsignedInt(resp[4]) << 8 & 0xFF) | (Byte.toUnsignedInt(resp[5]) & 0xFF);
+                psize /= 3;
+                if (6 + psize * 6 > resp.length) {
+                    // error
+                    return new int[0];
+                }
+                // System.out.println(resp.length);
+                // assert (resp.length - 6) % 3 == 0;
                 // to int
-                int[] data = new int[resp.length / 2];
-                for (int i = 0; i < data.length; i++) {
-                    data[i] = (resp[2 * i] << 8) | (resp[2 * i + 1] & 0xFF);
+                int[] data = new int[3 + psize * 2];
+                data[0] = Byte.toUnsignedInt(resp[0]) << 8 | (Byte.toUnsignedInt(resp[1]) & 0xFF); // id
+                data[1] = Byte.toUnsignedInt(resp[2]) << 8 | (Byte.toUnsignedInt(resp[3]) & 0xFF); // index
+                data[2] = psize; // package data size
+                int tmp;
+                for (int i = 0; i < psize; i += 1) {
+                    // time
+                    tmp = (Byte.toUnsignedInt(resp[6 * i + 6]) << 24);
+                    tmp |= (Byte.toUnsignedInt(resp[6 * i + 7]) << 16);
+                    tmp |= (Byte.toUnsignedInt(resp[6 * i + 8]) << 8);
+                    tmp |= (Byte.toUnsignedInt(resp[6 * i + 9]) & 0xFF);
+                    data[2 * i + 3] = tmp;
+                    // volt
+                    tmp = (Byte.toUnsignedInt(resp[6 * i + 10]) << 8);
+                    tmp |= (Byte.toUnsignedInt(resp[6 * i + 11]) & 0xFF);
+                    data[2 * i + 4] = tmp - (1 << 15);
                 }
                 return data;
             }

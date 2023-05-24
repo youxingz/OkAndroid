@@ -51,6 +51,18 @@ public class Leadshine57PumpQueued {
     }
 
     /**
+     * 0x0191 电流峰值
+     *
+     * @param current 10 := 0.1A
+     */
+    public void setCurrentValue(int current) throws ModbusTransportException {
+        ModbusResponse response = master.send(new WriteRegisterRequest(slaveId, 0x0191, current));
+        if (response.isException()) {
+            //...
+        }
+    }
+
+    /**
      * 启停, 0: 停止, 1: 启动
      * 0x000F
      */
@@ -91,7 +103,7 @@ public class Leadshine57PumpQueued {
                             }
                         }
                         // Thread.sleep(40); // <50ms
-                        Thread.sleep(20); // <50ms
+                        Thread.sleep(60); // <50ms
                     } catch (ModbusTransportException | InterruptedException e) {
                         e.printStackTrace();
                         if (!emitter.isDisposed()) {

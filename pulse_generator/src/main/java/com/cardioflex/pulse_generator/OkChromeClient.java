@@ -16,8 +16,8 @@ public class OkChromeClient extends WebChromeClient {
     @Override
     public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
         // try {
-        System.out.println(consoleMessage.message());
-        System.out.println(consoleMessage.messageLevel());
+        // System.out.println(consoleMessage.message());
+        // System.out.println(consoleMessage.messageLevel());
         Log.i("Console", consoleMessage.message());
         //     Thread.sleep(5000);
         // } catch (InterruptedException e) {

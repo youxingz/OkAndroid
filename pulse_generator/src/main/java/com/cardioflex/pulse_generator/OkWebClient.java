@@ -76,6 +76,7 @@ public class OkWebClient extends WebViewClient {
             }
             case "/device_dashboard.html": {
                 PageDashboard.setCoreActivity(coreActivity);
+                PageDeviceList.stopScanDevice();
                 String macAddress = uri.getQueryParameter("mac");
                 Log.i(TAG, "ConnectTo: [device mac] " + macAddress);
                 PageDashboard.startConnect(macAddress); // 进入页面自动开始设备连接

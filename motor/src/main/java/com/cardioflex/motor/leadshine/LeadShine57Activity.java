@@ -80,6 +80,10 @@ public class LeadShine57Activity extends AppCompatActivity {
                 try {
                     if (!motor.isWorking()) {
                         Snackbar.make(logTextView, "循环开启", Snackbar.LENGTH_LONG).show();
+                        // motor.setCurrentValue(5); // 500mA.
+                        // OkAndroid.mainThread().scheduleDirect(() -> {
+                        //     addLog("当前峰值电流：" + 5 * 100 + "mA");
+                        // });
                         motor.turnOn().observeOn(OkAndroid.mainThread()).subscribeOn(OkAndroid.subscribeIOThread()).subscribe(new Observer<Integer>() {
                             @Override
                             public void onSubscribe(@NonNull Disposable d) {
@@ -285,6 +289,47 @@ public class LeadShine57Activity extends AppCompatActivity {
                 updateConfig(120, 150, true, 10, 50, false);
                 loop();
                 break;
+            }
+        }
+    }
+
+    public void onButtonCurrClicked(View view) {
+        int current = 0;
+        switch (view.getId()) {
+            case R.id.button_curr_1: {
+                current = 1;
+                break;
+            }
+            case R.id.button_curr_2: {
+                current = 5;
+                break;
+            }
+            case R.id.button_curr_3: {
+                current = 7;
+                break;
+            }
+            case R.id.button_curr_4: {
+                current = 10;
+                break;
+            }
+            case R.id.button_curr_5: {
+                current = 12;
+                break;
+            }
+            case R.id.button_curr_6: {
+                current = 15;
+                break;
+            }
+        }
+        if (current != 0) {
+            try {
+                motor.setCurrentValue(current);
+                Snackbar.make(logTextView, "电流峰值设置成功：" + current * 100, Snackbar.LENGTH_LONG).show();
+                addLog("当前电流峰值：" + current * 100 + "mA");
+            } catch (ModbusTransportException e) {
+                e.printStackTrace();
+                Snackbar.make(logTextView, "Error: " + e.getMessage(), Snackbar.LENGTH_LONG).show();
+                addLog(e.getMessage());
             }
         }
     }

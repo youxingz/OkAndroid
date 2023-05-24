@@ -71,6 +71,7 @@ public abstract class OkBleGattCallback extends BluetoothGattCallback {
                 // success = gatt.writeDescriptor(descriptor);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     gatt.writeDescriptor(descriptor, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                    // gatt.writeDescriptor(descriptor, BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
                 } else {
                     descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
                     // descriptor.setValue(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE); // ? 带上就不一定会成功订阅

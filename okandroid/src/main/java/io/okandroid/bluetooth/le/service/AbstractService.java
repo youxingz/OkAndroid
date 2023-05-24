@@ -52,51 +52,58 @@ public abstract class AbstractService {
 
     protected <T> Observable<T> observeNotification(UUID serviceUUID, UUID characteristicUUID, UUID descriptorUUID, CharacteristicValueTaker<T> characteristicValueTaker) {
         return Observable.create(emitter -> {
-            if (!client.isConnected()) {
-                emitter.onError(new OkBluetoothException("BLE device is not connected."));
-                return;
-            }
-            BluetoothGattCharacteristic characteristic = client.getCharacteristic(serviceUUID, characteristicUUID);
-            if (characteristic == null) {
-                emitter.onError(new OkBluetoothException(String.format("BLE device not support: [NOTIFY] %s / %s", serviceName, characteristicUUID)));
-                return;
-            }
-            BluetoothGattDescriptor descriptor = characteristic.getDescriptor(descriptorUUID);
-            if (descriptor == null) {
-                emitter.onError(new OkBluetoothException(String.format("BLE device not support: [NOTIFY] %s / %s / %s", serviceName, characteristicUUID, descriptorUUID)));
-                return;
-            }
-            Thread.sleep(1000);
-            // client.enableNotification(characteristic, descriptorUUID, true);
-            client.observeNotification(descriptor).observeOn(OkAndroid.mainThread()).subscribeOn(Schedulers.io()).subscribe(new Observer<OkBleCharacteristic>() {
-                @Override
-                public void onSubscribe(@NonNull Disposable d) {
-                    System.out.println(d.isDisposed());
+            try {
+                if (!client.isConnected()) {
+                    emitter.onError(new OkBluetoothException("BLE device is not connected."));
+                    return;
                 }
-
-                @Override
-                public void onNext(@NonNull OkBleCharacteristic okBleCharacteristic) {
-                    BluetoothGattCharacteristic characteristic = okBleCharacteristic.getCharacteristic();
-                    if (characteristic == null) return;
-                    if (emitter != null && !emitter.isDisposed()) {
-                        emitter.onNext(characteristicValueTaker.takeValue(characteristic)); // hex byte array.
+                BluetoothGattCharacteristic characteristic = client.getCharacteristic(serviceUUID, characteristicUUID);
+                if (characteristic == null) {
+                    emitter.onError(new OkBluetoothException(String.format("BLE device not support: [NOTIFY] %s / %s", serviceName, characteristicUUID)));
+                    return;
+                }
+                BluetoothGattDescriptor descriptor = characteristic.getDescriptor(descriptorUUID);
+                if (descriptor == null) {
+                    emitter.onError(new OkBluetoothException(String.format("BLE device not support: [NOTIFY] %s / %s / %s", serviceName, characteristicUUID, descriptorUUID)));
+                    return;
+                }
+                Thread.sleep(1000);
+                // client.enableNotification(characteristic, descriptorUUID, true);
+                client.observeNotification(descriptor).observeOn(OkAndroid.mainThread()).subscribeOn(Schedulers.io()).subscribe(new Observer<OkBleCharacteristic>() {
+                    @Override
+                    public void onSubscribe(@NonNull Disposable d) {
+                        System.out.println(d.isDisposed());
                     }
-                }
 
-                @Override
-                public void onError(@NonNull Throwable e) {
-                    if (emitter != null && !emitter.isDisposed()) {
-                        emitter.onError(e);
+                    @Override
+                    public void onNext(@NonNull OkBleCharacteristic okBleCharacteristic) {
+                        BluetoothGattCharacteristic characteristic = okBleCharacteristic.getCharacteristic();
+                        if (characteristic == null) return;
+                        if (emitter != null && !emitter.isDisposed()) {
+                            emitter.onNext(characteristicValueTaker.takeValue(characteristic)); // hex byte array.
+                        }
                     }
-                }
 
-                @Override
-                public void onComplete() {
-                    if (emitter != null && !emitter.isDisposed()) {
-                        emitter.onComplete();
+                    @Override
+                    public void onError(@NonNull Throwable e) {
+                        if (emitter != null && !emitter.isDisposed()) {
+                            emitter.onError(e);
+                        }
                     }
+
+                    @Override
+                    public void onComplete() {
+                        if (emitter != null && !emitter.isDisposed()) {
+                            emitter.onComplete();
+                        }
+                    }
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+                if (emitter != null && !emitter.isDisposed()) {
+                    emitter.onError(e);
                 }
-            });
+            }
         });
     }
 
