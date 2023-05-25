@@ -96,8 +96,23 @@ public class PageDashboard {
 
                             @Override
                             public void onNext(int @NonNull [] ints) {
-                                System.out.println(Arrays.toString(ints));
+                                // System.out.println(Arrays.toString(ints));
+                                CoreActivity.getOkWebViewInstance().sendToWeb(new EventPayload("ble_wave", 0, "success", ints)).subscribeOn(OkAndroid.subscribeIOThread()).observeOn(OkAndroid.mainThread()).subscribe(new SingleObserver<EventResponse>() {
+                                    @Override
+                                    public void onSubscribe(@io.reactivex.rxjava3.annotations.NonNull Disposable d) {
 
+                                    }
+
+                                    @Override
+                                    public void onSuccess(@io.reactivex.rxjava3.annotations.NonNull EventResponse eventResponse) {
+                                        System.out.println(eventResponse);
+                                    }
+
+                                    @Override
+                                    public void onError(@io.reactivex.rxjava3.annotations.NonNull Throwable e) {
+                                        e.printStackTrace();
+                                    }
+                                });
                             }
 
                             @Override

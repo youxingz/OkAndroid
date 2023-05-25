@@ -84,6 +84,9 @@ public class PulseGeneratorService extends AbstractService {
             for (int i = 0; i < total; i++) {
                 WaveParam param = params.get(i);
                 byte[] data = param.toPayload((int) (System.currentTimeMillis() / 1000), total, i);
+                System.out.println(Arrays.toString(data));
+                if (data == null)
+                    continue;
                 Single<BluetoothGattCharacteristic> single = client.writeCharacteristic(characteristic, data, BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
                 //.onErrorResumeNext(new Function<Throwable, SingleSource<? extends BluetoothGattCharacteristic>>() {
                 //     @Override
@@ -169,21 +172,57 @@ public class PulseGeneratorService extends AbstractService {
         }
 
         public byte[] toPayload(int id, int total, int index) {
-            byte[] data = new byte[length * 2 + 8];
-            int command = type.getCode();
-            data[0] = (byte) (id >> 8 & 0xFF);
-            data[1] = (byte) (id & 0xFF);
-            data[2] = (byte) (total >> 8 & 0xFF);
-            data[3] = (byte) (total & 0xFF);
-            data[4] = (byte) (index >> 8 & 0xFF);
-            data[5] = (byte) (index & 0xFF);
-            data[6] = (byte) (command >> 8 & 0xFF);
-            data[7] = (byte) (command & 0xFF);
+            byte[] data = null;
             // params:
-            for (int i = 0; i < length; i++) {
-                int param = params[i];
-                data[8 + 2 * i] = (byte) (param >> 8 & 0xFF);
-                data[8 + 2 * i + 1] = (byte) (param & 0xFF);
+            if (type == Type.square) {
+                data = new byte[length * 2 + 10];
+                int command = type.getCode();
+                data[0] = (byte) (id >> 8 & 0xFF);
+                data[1] = (byte) (id & 0xFF);
+                data[2] = (byte) (total >> 8 & 0xFF);
+                data[3] = (byte) (total & 0xFF);
+                data[4] = (byte) (index >> 8 & 0xFF);
+                data[5] = (byte) (index & 0xFF);
+                data[6] = (byte) (command >> 8 & 0xFF);
+                data[7] = (byte) (command & 0xFF);
+                if (params.length < 5) {
+                    // error.
+                    return null;
+                }
+                int volt = params[0];
+                int first_positive = params[1];
+                int count = params[2];
+                int is_alternate = params[3];
+                int period_us = params[4];
+                int duty_100 = params[5];
+                data[8] = (byte) (volt >> 8 & 0xFF);
+                data[9] = (byte) (volt & 0xFF);
+                data[10] = (byte) (count >> 8 & 0xFF);
+                data[11] = (byte) (count & 0xFF);
+                data[12] = (byte) (period_us >> 24 & 0xFF);
+                data[13] = (byte) (period_us >> 16 & 0xFF);
+                data[14] = (byte) (period_us >> 8 & 0xFF);
+                data[15] = (byte) (period_us & 0xFF);
+                data[16] = (byte) (duty_100 >> 8 & 0xFF);
+                data[17] = (byte) (duty_100 & 0xFF);
+                data[18] = (byte) (first_positive & 0xFF);
+                data[19] = (byte) (is_alternate & 0xFF);
+            } else {
+                data = new byte[length * 2 + 8];
+                int command = type.getCode();
+                data[0] = (byte) (id >> 8 & 0xFF);
+                data[1] = (byte) (id & 0xFF);
+                data[2] = (byte) (total >> 8 & 0xFF);
+                data[3] = (byte) (total & 0xFF);
+                data[4] = (byte) (index >> 8 & 0xFF);
+                data[5] = (byte) (index & 0xFF);
+                data[6] = (byte) (command >> 8 & 0xFF);
+                data[7] = (byte) (command & 0xFF);
+                for (int i = 0; i < length; i++) {
+                    int param = params[i];
+                    data[8 + 2 * i] = (byte) (param >> 8 & 0xFF);
+                    data[8 + 2 * i + 1] = (byte) (param & 0xFF);
+                }
             }
             return data;
         }
