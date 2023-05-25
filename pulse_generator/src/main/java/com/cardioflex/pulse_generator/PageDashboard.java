@@ -46,6 +46,7 @@ public class PageDashboard {
             // 58:61:C0:60:94:99
             nordic52832 = new Nordic52832(coreActivity, macAddress); // "F5:34:F4:78:DB:AA"
             nordic52832.connect().subscribe(new Observer<OkBleClient.ConnectionStatus>() {
+                private Disposable batteryDisposable;
                 private Disposable currentWaveDisposable;
 
                 @Override
@@ -57,11 +58,14 @@ public class PageDashboard {
                 public void onNext(OkBleClient.@NonNull ConnectionStatus connectionStatus) {
                     Log.i(TAG, "connection::" + connectionStatus.name());
                     if (connectionStatus == OkBleClient.ConnectionStatus.connected) {
-                        // do something.
+                        if (batteryDisposable != null && !batteryDisposable.isDisposed()) {
+                            batteryDisposable.dispose();
+                        }
+                        Log.i(TAG, "Register: Notify[Battery]");
                         nordic52832.battery().subscribe(new Observer<Integer>() {
                             @Override
                             public void onSubscribe(@NonNull Disposable d) {
-
+                                batteryDisposable = d;
                             }
 
                             @Override
@@ -88,6 +92,7 @@ public class PageDashboard {
                         // } catch (InterruptedException e) {
                         //     e.printStackTrace();
                         // }
+                        Log.i(TAG, "Register: Notify[CurrentWave]");
                         nordic52832.currentWave().subscribe(new Observer<int[]>() {
                             @Override
                             public void onSubscribe(@NonNull Disposable d) {
