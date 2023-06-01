@@ -5,6 +5,7 @@ import android.util.Log;
 import com.cardioflex.bioreactor.opc.BioreactorNodeId;
 import com.cardioflex.bioreactor.opc.OPC;
 import com.cardioflex.bioreactor.opc.OPCUtils;
+import com.cardioflex.bioreactor.sys.Sys;
 import com.cardioflex.bioreactor.x.EventPayload;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -36,6 +37,7 @@ public class PageDashboard {
     }
 
     public static void start() {
+        Sys.start();
         List<NodeId> nodeIds = new ArrayList<>();
         nodeIds.add(BioreactorNodeId.Equit_Air_PV);
         nodeIds.add(BioreactorNodeId.Equit_CO2_PV);

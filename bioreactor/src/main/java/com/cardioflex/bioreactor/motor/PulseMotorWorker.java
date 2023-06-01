@@ -22,19 +22,25 @@ public class PulseMotorWorker {
      * @throws IOException
      */
     public static void reset() throws IOException {
-        String defaultDeviceName = new SerialPortFinder().getAllDevicesPath()[0]; // "/dev/ttyUSB0"
-        SerialDevice device = SerialDevice.newBuilder(defaultDeviceName, 38400).dataBits(8).parity(0).stopBits(1).build();
-        ModbusMaster modbusMaster = ModbusMasterCreator.create(device);
-        modbusMaster.enableDebug(true);
+        // String defaultDeviceName = new SerialPortFinder().getAllDevicesPath()[0]; // "/dev/ttyUSB0"
+        // SerialDevice device = SerialDevice.newBuilder(defaultDeviceName, 38400).dataBits(8).parity(0).stopBits(1).build();
+        // ModbusMaster modbusMaster = ModbusMasterCreator.create(device);
+        // modbusMaster.enableDebug(true);
         // stop all
         stopAll();
         motors.clear();
-        motors.put("a1", new PulseMotor("a1", new Leadshine57PumpQueued(modbusMaster, 1)));
-        motors.put("a2", new PulseMotor("a2", new Leadshine57PumpQueued(modbusMaster, 2)));
-        motors.put("a3", new PulseMotor("a3", new Leadshine57PumpQueued(modbusMaster, 3)));
-        motors.put("b1", new PulseMotor("b1", new Leadshine57PumpQueued(modbusMaster, 4)));
-        motors.put("b2", new PulseMotor("b2", new Leadshine57PumpQueued(modbusMaster, 5)));
-        motors.put("b3", new PulseMotor("b3", new Leadshine57PumpQueued(modbusMaster, 6)));
+        // motors.put("a1", new PulseMotor("a1", new Leadshine57PumpQueued(modbusMaster, 1)));
+        // motors.put("a2", new PulseMotor("a2", new Leadshine57PumpQueued(modbusMaster, 2)));
+        // motors.put("a3", new PulseMotor("a3", new Leadshine57PumpQueued(modbusMaster, 3)));
+        // motors.put("b1", new PulseMotor("b1", new Leadshine57PumpQueued(modbusMaster, 4)));
+        // motors.put("b2", new PulseMotor("b2", new Leadshine57PumpQueued(modbusMaster, 5)));
+        // motors.put("b3", new PulseMotor("b3", new Leadshine57PumpQueued(modbusMaster, 6)));
+        motors.put("a1", new PulseMotor("a1", null));
+        motors.put("a2", new PulseMotor("a2", null));
+        motors.put("a3", new PulseMotor("a3", null));
+        motors.put("b1", new PulseMotor("b1", null));
+        motors.put("b2", new PulseMotor("b2", null));
+        motors.put("b3", new PulseMotor("b3", null));
     }
 
     public static void stopAll() {
