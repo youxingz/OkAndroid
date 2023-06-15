@@ -15,10 +15,10 @@ public class OkChromeClient extends WebChromeClient {
     // 参数result:代表输入框的返回值
     @Override
     public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
+        // Log.i("Console", consoleMessage.message());
         // try {
         // System.out.println(consoleMessage.message());
         // System.out.println(consoleMessage.messageLevel());
-        Log.i("Console", consoleMessage.message());
         //     Thread.sleep(5000);
         // } catch (InterruptedException e) {
         //     e.printStackTrace();

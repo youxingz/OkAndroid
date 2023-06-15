@@ -88,14 +88,18 @@ public class PulseMotor {
                     velocity = config.getV1();
                     // motor.changeVelocity((int) velocity);
                     // motor.changeDirection(direction);
-                    notify(true, direction, velocity);
+                    if (config.getT1().longValue() > 100) {
+                        notify(true, direction, velocity);
+                    }
                     Thread.sleep(config.getT1().longValue());
                     // period2
                     direction = config.getD2();
                     velocity = config.getV2();
                     // motor.changeVelocity((int) velocity);
                     // motor.changeDirection(direction);
-                    notify(true, direction, velocity);
+                    if (config.getT2().longValue() > 100) {
+                        notify(true, direction, velocity);
+                    }
                     Thread.sleep(config.getT2().longValue());
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -190,11 +194,10 @@ public class PulseMotor {
         List<PulseMotorHttpConfigItem> items = new ArrayList<>();
         items.add(new PulseMotorHttpConfigItem(config.getV1().intValue(), config.getT1().intValue(), config.getD1()));
         items.add(new PulseMotorHttpConfigItem(config.getV2().intValue(), config.getT2().intValue(), config.getD2()));
-        PulseMotorHttpConfig payloadConfig = new PulseMotorHttpConfig(items);
-        payloadConfig.setTurn(turnOn);
+        PulseMotorHttpConfig payloadConfig = new PulseMotorHttpConfig(items, turnOn);
         PulseMotorHttpPayload payload = new PulseMotorHttpPayload(payloadConfig);
         Response response = OkHttpHelper.post("http://" + ip + "/api/v1/config", payload);
-        if (!response.isSuccessful()) {
+        if (response == null || !response.isSuccessful()) {
             // set success.
             throw new Exception("Http connect error.");
         }
@@ -374,8 +377,9 @@ public class PulseMotor {
         private List<PulseMotorHttpConfigItem> items;
         private boolean turn;
 
-        public PulseMotorHttpConfig(List<PulseMotorHttpConfigItem> items) {
+        public PulseMotorHttpConfig(List<PulseMotorHttpConfigItem> items, boolean turn) {
             this.items = items;
+            this.turn = turn;
         }
 
         public List<PulseMotorHttpConfigItem> getItems() {
