@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -8,7 +11,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.OkAndroid">
         <activity
-            android:name=".leadshine.LeadShine57Activity"
+            android:name=".gmt.GMTActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -17,14 +20,17 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".leadfluid_x.LeadShine57PumpActivity2"
+            android:name=".leadshine.LeadShine57Activity"
             android:exported="true"></activity>
+        <activity
+            android:name=".leadfluid_x.LeadShine57PumpActivity2"
+            android:exported="true" />
         <activity
             android:name=".leadfluid_x.LiquidActivity"
-            android:exported="true"></activity>
+            android:exported="true" />
         <activity
             android:name=".leadshine.LeadShineActivity"
-            android:exported="true"></activity>
+            android:exported="true" />
         <activity
             android:name=".pump.PumpActivity"
             android:exported="true">

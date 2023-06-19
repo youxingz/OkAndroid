@@ -24,7 +24,7 @@ public class PulseMotor {
     private static final HashMap<String, String> ipStore = new HashMap<>();
 
     static {
-        ipStore.put("a1", "10.168.1.4");
+        ipStore.put("a1", "10.168.1.15");
         ipStore.put("a2", "10.168.1.4");
         ipStore.put("a3", "10.168.1.4");
         ipStore.put("b1", "10.168.1.4");
@@ -200,6 +200,11 @@ public class PulseMotor {
         if (response == null || !response.isSuccessful()) {
             // set success.
             throw new Exception("Http connect error.");
+        }
+        try {
+            response.body().close();
+        } catch (Exception e) {
+            throw new Exception("Http response body close error.");
         }
     }
 
