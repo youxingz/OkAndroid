@@ -17,6 +17,7 @@ import com.cardioflex.motor.R;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.okandroid.OkAndroid;
 import io.okandroid.http.OkHttpHelper;
 import okhttp3.Response;
 
@@ -26,13 +27,15 @@ public class GMTCell extends LinearLayout {
     private int id;
     private String ip;
     private int motorId;
+    private String tag;
 
-    public GMTCell(Activity context, int id, String ip, int motorId) {
+    public GMTCell(Activity context, int id, String ip, int motorId, String tag) {
         super(context);
         this.activity = context;
         this.id = id;
         this.ip = ip;
         this.motorId = motorId;
+        this.tag = tag;
         LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         root = inflater.inflate(R.layout.view_gmt_cell, this);
         initView();
@@ -40,7 +43,7 @@ public class GMTCell extends LinearLayout {
 
     private void initView() {
         TextView titleView = findViewById(R.id.title_text);
-        titleView.setText("脉搏【" + id + "】号【" + ip + "/" + motorId + "】");
+        titleView.setText("脉搏【" + id + "】号【" + ip + "/" + motorId + "】【" + tag + "】");
         ToggleButton stopOrStart = findViewById(R.id.turn_btn);
         ListView listView = findViewById(R.id.config_list);
         GMTCellAdapter adapter = new GMTCellAdapter(activity, R.layout.view_gmt_list_item);
@@ -66,25 +69,27 @@ public class GMTCell extends LinearLayout {
     }
 
     private void sendHttp(GMTCellAdapter adapter, boolean turnOn) {
-        System.out.println("GMT Driver: HTTP/Request [turn: " + turnOn + "]");
-        List<PulseMotorHttpConfigItem> items = new ArrayList<>();
-        for (int i = 0; i < adapter.getCount(); i++) {
-            GMTCellAdapter.ConfigModel model = adapter.getModel(i);
-            items.add(new PulseMotorHttpConfigItem(model.velocity.intValue(), model.seconds, model.isClockwise));
-        }
-        PulseMotorHttpConfig payloadConfig = new PulseMotorHttpConfig(items, turnOn);
-        PulseMotorHttpPayload payload = new PulseMotorHttpPayload(payloadConfig, motorId);
-        System.out.println(payload);
-        Response response = OkHttpHelper.post("http://" + ip + "/api/v1/config", payload);
-        if (response == null || !response.isSuccessful()) {
-            // set success.
-            // throw new Exception("Http connect error.");
-        }
-        try {
-            response.body().close();
-        } catch (Exception e) {
-            // throw new Exception("Http response body close error.");
-        }
+        OkAndroid.newThread().scheduleDirect(() -> {
+            System.out.println("GMT Driver: HTTP/Request [turn: " + turnOn + "]");
+            List<PulseMotorHttpConfigItem> items = new ArrayList<>();
+            for (int i = 0; i < adapter.getCount(); i++) {
+                GMTCellAdapter.ConfigModel model = adapter.getModel(i);
+                items.add(new PulseMotorHttpConfigItem(model.velocity.intValue(), model.seconds, model.isClockwise));
+            }
+            PulseMotorHttpConfig payloadConfig = new PulseMotorHttpConfig(items, turnOn);
+            PulseMotorHttpPayload payload = new PulseMotorHttpPayload(payloadConfig, motorId);
+            System.out.println(payload);
+            Response response = OkHttpHelper.post("http://" + ip + "/api/v1/config", payload);
+            if (response == null || !response.isSuccessful()) {
+                // set success.
+                // throw new Exception("Http connect error.");
+            }
+            try {
+                response.body().close();
+            } catch (Exception e) {
+                // throw new Exception("Http response body close error.");
+            }
+        });
     }
 
     public interface OnDoneClick {
@@ -118,10 +123,7 @@ public class GMTCell extends LinearLayout {
 
         @Override
         public String toString() {
-            return "PulseMotorHttpPayload{" +
-                    "config=" + config +
-                    ", motorId=" + motorId +
-                    '}';
+            return "PulseMotorHttpPayload{" + "config=" + config + ", motorId=" + motorId + '}';
         }
     }
 
@@ -152,10 +154,7 @@ public class GMTCell extends LinearLayout {
 
         @Override
         public String toString() {
-            return "PulseMotorHttpConfig{" +
-                    "items=" + items +
-                    ", turn=" + turn +
-                    '}';
+            return "PulseMotorHttpConfig{" + "items=" + items + ", turn=" + turn + '}';
         }
     }
 
@@ -196,11 +195,7 @@ public class GMTCell extends LinearLayout {
 
         @Override
         public String toString() {
-            return "PulseMotorHttpConfigItem{" +
-                    "velocity=" + velocity +
-                    ", time=" + time +
-                    ", direction=" + direction +
-                    '}';
+            return "PulseMotorHttpConfigItem{" + "velocity=" + velocity + ", time=" + time + ", direction=" + direction + '}';
         }
     }
 }
