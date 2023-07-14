@@ -451,6 +451,26 @@ public class OkBleClient {
         });
     }
 
+
+    @SuppressLint("MissingPermission")
+    public void simpleWrite(UUID serviceUUID, UUID characteristicUUID, byte[] data) {
+        BluetoothGattCharacteristic characteristic = getCharacteristic(serviceUUID, characteristicUUID);
+        characteristic.setValue(data);
+        characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+        mBluetoothGatt.writeCharacteristic(characteristic);
+    }
+
+    @SuppressLint("MissingPermission")
+    public Observable simpleSubscribe(UUID serviceUUID, UUID characteristicUUID, UUID descriptorUUID) {
+        BluetoothGattCharacteristic characteristic = getCharacteristic(serviceUUID, characteristicUUID);
+        mBluetoothGatt.setCharacteristicNotification(characteristic, true);
+        BluetoothGattDescriptor descriptor = characteristic.getDescriptor(descriptorUUID);
+        descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+        return Observable.create(emitter -> {
+
+        });
+    }
+
     // private
 
     private boolean validGatt(ObservableEmitter emitter) {
