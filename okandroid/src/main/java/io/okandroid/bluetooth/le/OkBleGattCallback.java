@@ -63,17 +63,9 @@ public abstract class OkBleGattCallback extends BluetoothGattCallback {
         return Observable.create(emitter -> {
             Log.i("OKBLE", "try to observe notification");
             characteristicChangeEmitterMap.put(characteristic.getUuid(), emitter);
-            Thread.sleep(100);
-            // BluetoothGattCharacteristic characteristic = descriptor.getCharacteristic();
-            // boolean success = gatt.setCharacteristicNotification(characteristic, false);
             boolean success = gatt.setCharacteristicNotification(characteristic, true);
             if (success) {
-                // BluetoothGattDescriptor descriptor = characteristic.getDescriptor(UUID.fromString(characteristic.getUuid()));
-                // descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-                // descriptor.setValue(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
-                // success = gatt.writeDescriptor(descriptor);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    // descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
                     gatt.writeDescriptor(descriptor, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
                     // gatt.writeDescriptor(descriptor, BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
                 } else {
@@ -83,7 +75,6 @@ public abstract class OkBleGattCallback extends BluetoothGattCallback {
                 }
                 gatt.writeCharacteristic(characteristic);
             }
-            // success = gatt.setCharacteristicNotification(characteristic, true);
         });
     }
 

@@ -1,29 +1,18 @@
 package io.okandroid.bluetooth.le.service;
 
-import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothGattCharacteristic;
-
-import org.reactivestreams.Subscription;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import io.okandroid.OkAndroid;
-import io.okandroid.bluetooth.OkBluetoothException;
 import io.okandroid.bluetooth.le.OkBleClient;
-import io.reactivex.rxjava3.annotations.NonNull;
-import io.reactivex.rxjava3.core.FlowableSubscriber;
 import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.core.Single;
-import io.reactivex.rxjava3.core.SingleObserver;
-import io.reactivex.rxjava3.core.SingleSource;
 import io.reactivex.rxjava3.disposables.Disposable;
-import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class BCIX16Service extends AbstractService {
     public static final UUID BCI_X16_SERVICE = UUID.fromString("0000fade-0000-1000-8000-00805f9b34fb");
@@ -31,28 +20,18 @@ public class BCIX16Service extends AbstractService {
     public static final UUID CMD_RESULT_CHAR = UUID.fromString("0000fad2-0000-1000-8000-00805f9b34fb"); // 发生波形
     public static final UUID SAMPLE_CHAR = UUID.fromString("0000fad3-0000-1000-8000-00805f9b34fb"); // 发生波形
     public static final UUID PULSE_WAVE_DESC = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"); // 订阅通知：波形回传变化 desc
-
+    private X16DataPayloadParser payloadParser = new X16DataPayloadParser();
 
     public BCIX16Service(OkBleClient client) {
         super("Cardioflex BCI X16 Service", client);
     }
 
-    public Observable<int[]> startSample(String secret) {
+    public Observable<BCIX16Service.X16DataPayload> startSample(String secret) {
         startLoopSyncTimestamp(secret);
-        // try {
-        //     Thread.sleep(2000);
-        // } catch (InterruptedException e) {
-        //     throw new RuntimeException(e);
-        // }
-        return observeNotification(BCI_X16_SERVICE, SAMPLE_CHAR, PULSE_WAVE_DESC, new CharacteristicValueTaker<int[]>() {
+        return observeNotification(BCI_X16_SERVICE, SAMPLE_CHAR, PULSE_WAVE_DESC, new CharacteristicValueTaker<BCIX16Service.X16DataPayload>() {
             @Override
-            public int[] takeValue(BluetoothGattCharacteristic characteristic) {
-                /**
-                 * 除去前 6 byte, 剩余内容为：time: 4byte, volt: 2byte
-                 */
-                byte[] resp = characteristic.getValue();
-                System.out.println(Arrays.toString(resp));
-                return new int[]{};
+            public BCIX16Service.X16DataPayload takeValue(BluetoothGattCharacteristic characteristic) {
+                return payloadParser.parse(secret, characteristic.getValue());
             }
         });
     }
@@ -69,25 +48,84 @@ public class BCIX16Service extends AbstractService {
         }
         syncDisposable = OkAndroid.newThread().schedulePeriodicallyDirect(() -> {
             byte[] payload = ("{\"cmd\":4, \"secret\": \"" + secret + "\",\"ts\":" + System.currentTimeMillis() + "}").getBytes(StandardCharsets.UTF_8);
+            System.out.println(":::::::::::::::::::" + new Date().toString());
             client.simpleWrite(BCI_X16_SERVICE, CMD_CHAR, payload);
-            // writeOnce(BCI_X16_SERVICE, CMD_CHAR, payload, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT, v -> new String(v.getValue(), StandardCharsets.UTF_8)).observeOn(OkAndroid.mainThread()).subscribeOn(Schedulers.io()).subscribe(new SingleObserver<String>() {
-            //     @Override
-            //     public void onSubscribe(@NonNull Disposable d) {
-            //         System.out.println("========================>>>");
-            //         System.out.println(new Date().toString());
-            //     }
-            //
-            //     @Override
-            //     public void onSuccess(@NonNull String s) {
-            //         System.out.println("========================<<<");
-            //         System.out.println(new Date().toString());
-            //     }
-            //
-            //     @Override
-            //     public void onError(@NonNull Throwable e) {
-            //
-            //     }
-            // });
         }, 1, 1, TimeUnit.SECONDS);
     }
+
+
+    public static class X16DataPayloadParser {
+
+        public BCIX16Service.X16DataPayload parse(String secret, byte[] data) {
+            int index = 0;
+            X16DataPayload payload = new X16DataPayload();
+            // starts with: 0x73, 0x02
+            if (data[0] != 0x02) return payload;
+            try {
+                List<X16DataPayloadPoint> dataPoints = new ArrayList<>();
+                payload.data = dataPoints;
+                // parse.
+                index = 1;
+                long timestamp = 0;
+                long timestamp_pre = 0;
+                long timestamp_suf = 0;
+                int size = 0;
+                int channel_value = 0;
+                int channel_index = 0;
+                Integer[] acPoints = null;
+                Integer[] dcPoints = null;
+                // max size = 5
+                int P_SIZE = 5;
+                while (index < data.length) {
+                    if (--P_SIZE < 0) break;
+                    // timestamp: 8 bytes
+                    timestamp_pre = (long) Byte.toUnsignedInt(data[index++]) << 24;
+                    timestamp_pre |= (long) Byte.toUnsignedInt(data[index++]) << 16;
+                    timestamp_pre |= (long) Byte.toUnsignedInt(data[index++]) << 8;
+                    timestamp_pre |= (long) Byte.toUnsignedInt(data[index++]);
+                    timestamp_suf = (long) Byte.toUnsignedInt(data[index++]) << 24;
+                    timestamp_suf |= (long) Byte.toUnsignedInt(data[index++]) << 16;
+                    timestamp_suf |= (long) Byte.toUnsignedInt(data[index++]) << 8;
+                    timestamp_suf |= Byte.toUnsignedInt(data[index++]);
+                    timestamp = (timestamp_pre << 32) | timestamp_suf;
+                    size = Byte.toUnsignedInt(data[index++]) << 8;
+                    size |= Byte.toUnsignedInt(data[index++]);
+                    if (size != 16) return payload; // !important
+                    acPoints = new Integer[size];
+                    dcPoints = new Integer[size];
+                    for (channel_index = 0; channel_index < size; channel_index++) {
+                        // AC Amp. A[*]
+                        channel_value = Byte.toUnsignedInt(data[index++]) << 8;
+                        channel_value |= Byte.toUnsignedInt(data[index++]);
+                        acPoints[channel_index] = channel_value;
+                        // DC Amp. W[*]
+                        channel_value = Byte.toUnsignedInt(data[index++]) << 8;
+                        channel_value |= Byte.toUnsignedInt(data[index++]);
+                        dcPoints[channel_index] = channel_value;
+                    }
+                    X16DataPayloadPoint point = new X16DataPayloadPoint();
+                    point.acPoints = (acPoints);
+                    point.dcPoints = (dcPoints);
+                    point.timestamp = (timestamp);
+                    dataPoints.add(point);
+                }
+                payload.secret = secret;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return payload;
+        }
+    }
+
+    public static class X16DataPayload {
+        public String secret;
+        public List<X16DataPayloadPoint> data;
+    }
+
+    public static class X16DataPayloadPoint {
+        public Long timestamp;
+        public Integer[] acPoints;
+        public Integer[] dcPoints;
+    }
+
 }

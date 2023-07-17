@@ -2,12 +2,6 @@ package com.cardioflex.bci;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-
-import androidx.annotation.RequiresApi;
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -21,6 +15,11 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+
 import com.cardioflex.bci.databinding.ActivityFullscreenBinding;
 
 /**
@@ -32,6 +31,7 @@ public class FullscreenActivity extends AppCompatActivity {
     DeviceListAdapter deviceListAdapter;
     public ListView deviceListView;
     public TextView contentTextView;
+    public TextView delayMsTextView;
     public ProgressBar progressBar;
     public Button actionButton;
     /**
@@ -129,6 +129,7 @@ public class FullscreenActivity extends AppCompatActivity {
         mControlsView = binding.fullscreenContentControls;
         fullscreenContent = binding.fullscreenContent;
         contentTextView = binding.contentText;
+        delayMsTextView = binding.delayMsText;
 
         // Set up the user interaction to manually show or hide the system UI.
         fullscreenContent.setOnClickListener(new View.OnClickListener() {

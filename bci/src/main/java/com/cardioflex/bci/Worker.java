@@ -7,7 +7,6 @@ import android.bluetooth.le.ScanSettings;
 import android.os.Build;
 import android.os.ParcelUuid;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 
@@ -80,11 +79,12 @@ public class Worker {
     private ESP32C3 esp32C3;
     private static String SECRET = "testsecret";
 
+    Disposable disposableSample;
+
     public void startConnDevice(String macAddress) {
         updateContentText("开始连接...");
         esp32C3 = new ESP32C3(activity, macAddress);
         esp32C3.connect().subscribe(new Observer<OkBleClient.ConnectionStatus>() {
-            Disposable disposable;
 
             @Override
             public void onSubscribe(@NonNull Disposable d) {
@@ -98,23 +98,33 @@ public class Worker {
                     esp32C3.requestMtu(500);
 
                     // start listening.
-                    if (disposable != null) {
-                        if (!disposable.isDisposed()) {
-                            disposable.dispose();
+                    if (disposableSample != null) {
+                        if (!disposableSample.isDisposed()) {
+                            disposableSample.dispose();
                         }
-                        disposable = null;
+                        disposableSample = null;
                     }
-                    esp32C3.startSample(SECRET).subscribeOn(Schedulers.io()).observeOn(OkAndroid.newThread()).subscribe(new Observer<int[]>() {
+                    esp32C3.startSample(SECRET).subscribeOn(Schedulers.io()).observeOn(OkAndroid.newThread()).subscribe(new Observer<BCIX16Service.X16DataPayload>() {
+                        private long lastReceivedAt;
+
                         @Override
                         public void onSubscribe(@NonNull Disposable d) {
-                            disposable = d;
                             updateContentText("采样中...");
-                            System.out.println("Working...");
+                            switchMode(ButtonMode.stop_sample);
                         }
 
                         @Override
-                        public void onNext(int @NonNull [] ints) {
-                            System.out.println(Arrays.toString(ints));
+                        public void onNext(BCIX16Service.@NonNull X16DataPayload x16DataPayload) {
+                            if (x16DataPayload.secret == null) return; // ignore this.
+                            // save files
+                            // update ms:
+                            if (x16DataPayload.data != null && !x16DataPayload.data.isEmpty()) {
+                                long timestamp = x16DataPayload.data.get(0).timestamp;
+                                long diff = (timestamp - lastReceivedAt) / 1000;
+                                lastReceivedAt = timestamp;
+                                updateDelayMsText(diff);
+                                // updateContentText("采样中... [" + diff + " ms]");
+                            }
                         }
 
                         @Override
@@ -124,18 +134,18 @@ public class Worker {
 
                         @Override
                         public void onComplete() {
-                            System.out.println("?");
+
                         }
                     });
                     return;
                 }
                 if (connectionStatus == OkBleClient.ConnectionStatus.disconnected) {
                     updateContentText("设备离线");
-                    if (disposable != null) {
-                        if (!disposable.isDisposed()) {
-                            disposable.dispose();
+                    if (disposableSample != null) {
+                        if (!disposableSample.isDisposed()) {
+                            disposableSample.dispose();
                         }
-                        disposable = null;
+                        disposableSample = null;
                     }
                     return;
                 }
@@ -155,10 +165,25 @@ public class Worker {
 
     }
 
+    public void stopSample(String macAddress) {
+        if (disposableSample != null) {
+            if (!disposableSample.isDisposed()) {
+                disposableSample.dispose();
+            }
+            disposableSample = null;
+        }
+        esp32C3.disconnect();
+    }
 
     public void updateContentText(String text) {
         OkAndroid.mainThread().scheduleDirect(() -> {
             activity.contentTextView.setText(text);
+        });
+    }
+
+    public void updateDelayMsText(long time) {
+        OkAndroid.mainThread().scheduleDirect(() -> {
+            activity.delayMsTextView.setText("延迟：" + time + " ms");
         });
     }
 

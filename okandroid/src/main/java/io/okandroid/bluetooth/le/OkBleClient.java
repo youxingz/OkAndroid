@@ -454,10 +454,14 @@ public class OkBleClient {
 
     @SuppressLint("MissingPermission")
     public void simpleWrite(UUID serviceUUID, UUID characteristicUUID, byte[] data) {
-        BluetoothGattCharacteristic characteristic = getCharacteristic(serviceUUID, characteristicUUID);
-        characteristic.setValue(data);
-        characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
-        mBluetoothGatt.writeCharacteristic(characteristic);
+        try {
+            BluetoothGattCharacteristic characteristic = getCharacteristic(serviceUUID, characteristicUUID);
+            characteristic.setValue(data);
+            characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+            mBluetoothGatt.writeCharacteristic(characteristic);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @SuppressLint("MissingPermission")

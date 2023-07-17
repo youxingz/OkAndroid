@@ -38,6 +38,18 @@
             android:textSize="50sp"
             android:textStyle="bold" />
 
+        <TextView
+            android:layout_marginTop="24dp"
+            android:id="@+id/delay_ms_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:keepScreenOn="true"
+            android:text=""
+            android:textColor="?attr/fullscreenTextColor"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
         <ListView
             android:id="@+id/device_list_view"
             android:layout_width="match_parent"

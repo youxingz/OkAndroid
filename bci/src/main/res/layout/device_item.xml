@@ -38,5 +38,5 @@
         android:layout_marginTop="5dp"
         android:layout_alignParentEnd="true"
         android:layout_marginRight="24dp"
-        android:text="连接" />
+        android:text="开始采样" />
 </RelativeLayout>
