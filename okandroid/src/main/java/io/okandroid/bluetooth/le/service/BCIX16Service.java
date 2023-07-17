@@ -39,6 +39,11 @@ public class BCIX16Service extends AbstractService {
 
     public Observable<int[]> startSample(String secret) {
         startLoopSyncTimestamp(secret);
+        // try {
+        //     Thread.sleep(2000);
+        // } catch (InterruptedException e) {
+        //     throw new RuntimeException(e);
+        // }
         return observeNotification(BCI_X16_SERVICE, SAMPLE_CHAR, PULSE_WAVE_DESC, new CharacteristicValueTaker<int[]>() {
             @Override
             public int[] takeValue(BluetoothGattCharacteristic characteristic) {
@@ -47,7 +52,7 @@ public class BCIX16Service extends AbstractService {
                  */
                 byte[] resp = characteristic.getValue();
                 System.out.println(Arrays.toString(resp));
-                return null;
+                return new int[]{};
             }
         });
     }

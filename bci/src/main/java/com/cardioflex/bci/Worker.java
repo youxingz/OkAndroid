@@ -119,12 +119,12 @@ public class Worker {
 
                         @Override
                         public void onError(@NonNull Throwable e) {
-
+                            e.printStackTrace();
                         }
 
                         @Override
                         public void onComplete() {
-
+                            System.out.println("?");
                         }
                     });
                     return;

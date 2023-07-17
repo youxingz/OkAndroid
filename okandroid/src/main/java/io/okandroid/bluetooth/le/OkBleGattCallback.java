@@ -5,11 +5,12 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
-import android.bluetooth.BluetoothStatusCodes;
 import android.os.Build;
+import android.util.Log;
 
 import java.util.Hashtable;
 import java.util.Queue;
+import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import io.okandroid.bluetooth.OkBluetoothException;
@@ -25,7 +26,7 @@ public abstract class OkBleGattCallback extends BluetoothGattCallback {
     private Queue<OkBleCharacteristicReadRequest> requestReadQueue = new LinkedBlockingQueue<>();
     private Queue<OkBleCharacteristicWriteRequest> requestWriteQueue = new LinkedBlockingQueue<>();
 
-    private Hashtable<BluetoothGattCharacteristic, ObservableEmitter<OkBleCharacteristic>> characteristicChangeEmitterMap = new Hashtable<>();
+    private Hashtable<UUID, ObservableEmitter<OkBleCharacteristic>> characteristicChangeEmitterMap = new Hashtable<>();
     private BluetoothGatt gatt;
 
     private volatile boolean isReadRunning;
@@ -58,18 +59,21 @@ public abstract class OkBleGattCallback extends BluetoothGattCallback {
     }
 
     @SuppressLint("MissingPermission")
-    public Observable<OkBleCharacteristic> observeNotification(BluetoothGattDescriptor descriptor) {
+    public Observable<OkBleCharacteristic> observeNotification(BluetoothGattCharacteristic characteristic, BluetoothGattDescriptor descriptor) {
         return Observable.create(emitter -> {
-            BluetoothGattCharacteristic characteristic = descriptor.getCharacteristic();
+            Log.i("OKBLE", "try to observe notification");
+            characteristicChangeEmitterMap.put(characteristic.getUuid(), emitter);
+            Thread.sleep(100);
+            // BluetoothGattCharacteristic characteristic = descriptor.getCharacteristic();
             // boolean success = gatt.setCharacteristicNotification(characteristic, false);
             boolean success = gatt.setCharacteristicNotification(characteristic, true);
             if (success) {
-                characteristicChangeEmitterMap.put(characteristic, emitter);
                 // BluetoothGattDescriptor descriptor = characteristic.getDescriptor(UUID.fromString(characteristic.getUuid()));
                 // descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
                 // descriptor.setValue(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
                 // success = gatt.writeDescriptor(descriptor);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    // descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
                     gatt.writeDescriptor(descriptor, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
                     // gatt.writeDescriptor(descriptor, BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
                 } else {
@@ -77,6 +81,7 @@ public abstract class OkBleGattCallback extends BluetoothGattCallback {
                     // descriptor.setValue(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE); // ? 带上就不一定会成功订阅
                     gatt.writeDescriptor(descriptor);
                 }
+                gatt.writeCharacteristic(characteristic);
             }
             // success = gatt.setCharacteristicNotification(characteristic, true);
         });
@@ -191,11 +196,11 @@ public abstract class OkBleGattCallback extends BluetoothGattCallback {
     @Override
     public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
         super.onCharacteristicChanged(gatt, characteristic);
-        ObservableEmitter<OkBleCharacteristic> emitter = characteristicChangeEmitterMap.get(characteristic);
+        ObservableEmitter<OkBleCharacteristic> emitter = characteristicChangeEmitterMap.get(characteristic.getUuid());
         if (emitter != null && !emitter.isDisposed()) {
             this.onOkBleCharacteristicChanged(gatt, emitter, characteristic, characteristic.getValue());
         } else {
-            characteristicChangeEmitterMap.remove(characteristic);
+            characteristicChangeEmitterMap.remove(characteristic.getUuid());
             gatt.setCharacteristicNotification(characteristic, false); // disable notification.
         }
     }
@@ -204,11 +209,11 @@ public abstract class OkBleGattCallback extends BluetoothGattCallback {
     @Override
     public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, byte[] value) {
         super.onCharacteristicChanged(gatt, characteristic, value);
-        ObservableEmitter<OkBleCharacteristic> emitter = characteristicChangeEmitterMap.get(characteristic);
+        ObservableEmitter<OkBleCharacteristic> emitter = characteristicChangeEmitterMap.get(characteristic.getUuid());
         if (emitter != null && !emitter.isDisposed()) {
             this.onOkBleCharacteristicChanged(gatt, emitter, characteristic, value);
         } else {
-            characteristicChangeEmitterMap.remove(characteristic);
+            characteristicChangeEmitterMap.remove(characteristic.getUuid());
             gatt.setCharacteristicNotification(characteristic, false); // disable notification.
         }
     }

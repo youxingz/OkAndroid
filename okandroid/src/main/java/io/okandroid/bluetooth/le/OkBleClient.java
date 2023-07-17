@@ -419,8 +419,8 @@ public class OkBleClient {
     }
 
     @SuppressLint("MissingPermission")
-    public Observable<OkBleCharacteristic> observeNotification(BluetoothGattDescriptor descriptor) {
-        return gattCallback.observeNotification(descriptor);
+    public Observable<OkBleCharacteristic> observeNotification(BluetoothGattCharacteristic characteristic, BluetoothGattDescriptor descriptor) {
+        return gattCallback.observeNotification(characteristic, descriptor);
         // return Observable.create(emitter -> {
         //     if (!validGatt(emitter)) return;
         //     BluetoothGattCharacteristic characteristic = descriptor.getCharacteristic();
