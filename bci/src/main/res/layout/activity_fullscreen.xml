@@ -17,6 +17,18 @@
         android:gravity="center"
         android:orientation="vertical">
 
+        <TextView
+            android:layout_marginBottom="24dp"
+            android:id="@+id/secret_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:keepScreenOn="true"
+            android:text="3cca5bd2-2489-11ee-be56-0242ac120002"
+            android:textColor="?attr/fullscreenTextColor"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
         <ProgressBar
             android:id="@+id/progressBar"
             android:progressTint="@color/white"
@@ -37,6 +49,7 @@
             android:textColor="?attr/fullscreenTextColor"
             android:textSize="50sp"
             android:textStyle="bold" />
+
 
         <TextView
             android:layout_marginTop="24dp"

@@ -1,9 +1,9 @@
 package com.cardioflex.bioreactor.motor;
 
 import com.cardioflex.bioreactor.CoreActivity;
-import com.cardioflex.bioreactor.sys.Sys;
 import com.cardioflex.bioreactor.x.EventPayload;
-import com.serotonin.modbus4j.exception.ModbusTransportException;
+import com.google.android.material.snackbar.BaseTransientBottomBar;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,26 +14,26 @@ import io.okandroid.http.OkHttpHelper;
 import io.okandroid.js.EventResponse;
 import io.okandroid.sensor.motor.Leadshine57PumpQueued;
 import io.reactivex.rxjava3.annotations.NonNull;
-import io.reactivex.rxjava3.core.Observer;
 import io.reactivex.rxjava3.core.SingleObserver;
 import io.reactivex.rxjava3.disposables.Disposable;
 import okhttp3.Response;
 
 public class PulseMotor {
     private static final String STREAM_NAME = "pulse-motor-stream";
-    private static final HashMap<String, String> ipStore = new HashMap<>();
+    private static final HashMap<String, Integer> idStore = new HashMap<>();
+    private static final String ip = "192.168.1.15";
 
     static {
-        ipStore.put("a1", "10.168.1.15");
-        ipStore.put("a2", "10.168.1.4");
-        ipStore.put("a3", "10.168.1.4");
-        ipStore.put("b1", "10.168.1.4");
-        ipStore.put("b2", "10.168.1.4");
-        ipStore.put("b3", "10.168.1.4");
+        idStore.put("a1", 1);
+        idStore.put("a2", 2);
+        idStore.put("a3", 1);
+        idStore.put("b1", 3);
+        idStore.put("b2", 4);
+        idStore.put("b3", 1);
     }
 
     private String tag; // a1, a2, a3, b1, b2, b3
-    private String ip;
+    private Integer id;
     // current:
     private volatile float velocity;
     private volatile boolean direction;
@@ -47,8 +47,8 @@ public class PulseMotor {
 
     public PulseMotor(String tag, Leadshine57PumpQueued modbus) {
         this.tag = tag;
-        this.ip = ipStore.get(tag);
-        if (ip == null) {
+        this.id = idStore.get(tag);
+        if (id == null) {
             throw new IllegalArgumentException("Tag is invalid.");
         }
         this.motor = modbus;
@@ -195,14 +195,17 @@ public class PulseMotor {
         items.add(new PulseMotorHttpConfigItem(config.getV1().intValue(), config.getT1().intValue(), config.getD1()));
         items.add(new PulseMotorHttpConfigItem(config.getV2().intValue(), config.getT2().intValue(), config.getD2()));
         PulseMotorHttpConfig payloadConfig = new PulseMotorHttpConfig(items, turnOn);
-        PulseMotorHttpPayload payload = new PulseMotorHttpPayload(payloadConfig);
+        PulseMotorHttpPayload payload = new PulseMotorHttpPayload(payloadConfig, id);
         Response response = OkHttpHelper.post("http://" + ip + "/api/v1/config", payload);
         if (response == null || !response.isSuccessful()) {
             // set success.
-            throw new Exception("Http connect error.");
+            // throw new Exception("Http connect error.");
+            Snackbar.make(CoreActivity.getOkWebViewInstance().getWebView(), "[GMT] 配置更新失败 / HTTP Error", BaseTransientBottomBar.LENGTH_LONG).show();
+        } else {
+            Snackbar.make(CoreActivity.getOkWebViewInstance().getWebView(), "[GMT] 配置更新成功", BaseTransientBottomBar.LENGTH_LONG).show();
         }
         try {
-            response.body().close();
+            if (response != null) response.body().close();
         } catch (Exception e) {
             throw new Exception("Http response body close error.");
         }
@@ -228,13 +231,13 @@ public class PulseMotor {
     }
 
     public static class PulseMotorConfig {
-        private Boolean isOn;
-        private Boolean d1;
-        private Float v1;
-        private Float t1;
-        private Boolean d2;
-        private Float v2;
-        private Float t2;
+        private Boolean isOn = false;
+        private Boolean d1 = false;
+        private Float v1 = 0f;
+        private Float t1 = 0f;
+        private Boolean d2 = false;
+        private Float v2 = 0f;
+        private Float t2 = 0f;
 
         public PulseMotorConfig() {
             this.isOn = false;
@@ -364,9 +367,11 @@ public class PulseMotor {
 
     public static class PulseMotorHttpPayload {
         private PulseMotorHttpConfig config;
+        private Integer motorId;
 
-        public PulseMotorHttpPayload(PulseMotorHttpConfig config) {
+        public PulseMotorHttpPayload(PulseMotorHttpConfig config, Integer motorId) {
             this.config = config;
+            this.motorId = motorId;
         }
 
         public PulseMotorHttpConfig getConfig() {
@@ -375,6 +380,14 @@ public class PulseMotor {
 
         public void setConfig(PulseMotorHttpConfig config) {
             this.config = config;
+        }
+
+        public Integer getMotorId() {
+            return motorId;
+        }
+
+        public void setMotorId(Integer motorId) {
+            this.motorId = motorId;
         }
     }
 

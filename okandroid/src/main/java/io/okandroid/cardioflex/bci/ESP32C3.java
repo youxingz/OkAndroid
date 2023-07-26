@@ -50,4 +50,8 @@ public class ESP32C3 {
     public @NonNull Observable<BCIX16Service.X16DataPayload> startSample(String secret) {
         return this.bcix16Service.startSample(secret).observeOn(OkAndroid.newThread()).subscribeOn(Schedulers.io());
     }
+
+    public void stopSample() {
+        this.bcix16Service.stopSample();
+    }
 }

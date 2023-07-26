@@ -16,7 +16,8 @@ public class OkHttpHelper {
     public static Response get(String url) {
         Request request = new Request.Builder().url(url).build();
         try {
-            return client.newCall(request).execute();
+            return new OkHttpClient().newCall(request).execute();
+            // return client.newCall(request).execute();
         } catch (IOException e) {
             e.printStackTrace();
             // throw new RuntimeException(e);
@@ -28,7 +29,8 @@ public class OkHttpHelper {
         RequestBody body = RequestBody.create(GsonUtils.getInstance().toJson(data), JSON);
         Request request = new Request.Builder().url(url).post(body).build();
         try {
-            return client.newCall(request).execute();
+            return new OkHttpClient().newCall(request).execute();
+            // return client.newCall(request).execute();
         } catch (IOException e) {
             e.printStackTrace();
             // throw new RuntimeException(e);

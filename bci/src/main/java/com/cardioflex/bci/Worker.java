@@ -9,6 +9,7 @@ import android.os.ParcelUuid;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.UUID;
 
 import io.okandroid.OkAndroid;
 import io.okandroid.bluetooth.le.OkBleClient;
@@ -72,6 +73,11 @@ public class Worker {
 
                     }
                 });
+                break;
+            }
+            case stop_sample: {
+                stopSample(null);
+                break;
             }
         }
     }
@@ -104,11 +110,14 @@ public class Worker {
                         }
                         disposableSample = null;
                     }
+                    // gen secret
+                    SECRET = updateSecretText();
                     esp32C3.startSample(SECRET).subscribeOn(Schedulers.io()).observeOn(OkAndroid.newThread()).subscribe(new Observer<BCIX16Service.X16DataPayload>() {
                         private long lastReceivedAt;
 
                         @Override
                         public void onSubscribe(@NonNull Disposable d) {
+                            packageCount = 0;
                             updateContentText("采样中...");
                             switchMode(ButtonMode.stop_sample);
                         }
@@ -116,14 +125,14 @@ public class Worker {
                         @Override
                         public void onNext(BCIX16Service.@NonNull X16DataPayload x16DataPayload) {
                             if (x16DataPayload.secret == null) return; // ignore this.
-                            // save files
                             // update ms:
                             if (x16DataPayload.data != null && !x16DataPayload.data.isEmpty()) {
                                 long timestamp = x16DataPayload.data.get(0).timestamp;
                                 long diff = (timestamp - lastReceivedAt) / 1000;
                                 lastReceivedAt = timestamp;
                                 updateDelayMsText(diff);
-                                // updateContentText("采样中... [" + diff + " ms]");
+                                // save files:
+                                
                             }
                         }
 
@@ -149,7 +158,7 @@ public class Worker {
                     }
                     return;
                 }
-                updateContentText(connectionStatus.name());
+                updateContentText(connectionStatus.cname());
             }
 
             @Override
@@ -172,19 +181,24 @@ public class Worker {
             }
             disposableSample = null;
         }
+        esp32C3.stopSample();
         esp32C3.disconnect();
     }
 
     public void updateContentText(String text) {
-        OkAndroid.mainThread().scheduleDirect(() -> {
-            activity.contentTextView.setText(text);
-        });
+        OkAndroid.mainThread().scheduleDirect(() -> activity.contentTextView.setText(text));
     }
 
+    private static long packageCount = 0;
+
     public void updateDelayMsText(long time) {
-        OkAndroid.mainThread().scheduleDirect(() -> {
-            activity.delayMsTextView.setText("延迟：" + time + " ms");
-        });
+        OkAndroid.mainThread().scheduleDirect(() -> activity.delayMsTextView.setText("共收包：" + packageCount++ + "个，" + "延迟：" + time + " ms"));
+    }
+
+    public String updateSecretText() {
+        String secret = UUID.randomUUID().toString();
+        OkAndroid.mainThread().scheduleDirect(() -> activity.secretTextView.setText(secret));
+        return secret;
     }
 
     public void switchMode(ButtonMode mode) {

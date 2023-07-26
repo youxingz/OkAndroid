@@ -32,6 +32,7 @@ public class FullscreenActivity extends AppCompatActivity {
     public ListView deviceListView;
     public TextView contentTextView;
     public TextView delayMsTextView;
+    public TextView secretTextView;
     public ProgressBar progressBar;
     public Button actionButton;
     /**
@@ -130,6 +131,7 @@ public class FullscreenActivity extends AppCompatActivity {
         fullscreenContent = binding.fullscreenContent;
         contentTextView = binding.contentText;
         delayMsTextView = binding.delayMsText;
+        secretTextView = binding.secretText;
 
         // Set up the user interaction to manually show or hide the system UI.
         fullscreenContent.setOnClickListener(new View.OnClickListener() {

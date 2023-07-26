@@ -12,7 +12,9 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.ScanResult;
 import android.content.Context;
 import android.os.Build;
+import android.util.Log;
 
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.UUID;
 
@@ -47,7 +49,16 @@ public class OkBleClient {
     private SingleEmitter<Integer> readRssiEmitter;
 
     public enum ConnectionStatus {
-        connecting, services_discovering, connected, disconnected, disconnecting,
+        connecting("连接中"), services_discovering("服务发现中"), connected("已连接"), disconnected("已断开连接"), disconnecting("断开连接中");
+        private String chineseName;
+
+        ConnectionStatus(String chineseName) {
+            this.chineseName = chineseName;
+        }
+
+        public String cname() {
+            return this.chineseName;
+        }
     }
 
     private static ConnectionStatus connectionStatus = ConnectionStatus.disconnected;
@@ -456,10 +467,30 @@ public class OkBleClient {
     public void simpleWrite(UUID serviceUUID, UUID characteristicUUID, byte[] data) {
         try {
             BluetoothGattCharacteristic characteristic = getCharacteristic(serviceUUID, characteristicUUID);
-            characteristic.setValue(data);
-            characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
-            mBluetoothGatt.writeCharacteristic(characteristic);
-        } catch (Exception e) {
+            // System.out.println(Integer.toBinaryString(characteristic.getProperties()));
+            // System.out.println(Integer.toBinaryString(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE));
+            // characteristic.setValue(data);
+            // characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+            // boolean success = mBluetoothGatt.writeCharacteristic(characteristic);
+            boolean success;
+            // mBluetoothGatt.beginReliableWrite();
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                success = mBluetoothGatt.writeCharacteristic(characteristic, data, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT) == 0;
+            } else {
+                characteristic.setValue(data);
+                characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+                success = mBluetoothGatt.writeCharacteristic(characteristic);
+            }
+            @SuppressLint("SoonBlockedPrivateApi") Field busy = mBluetoothGatt.getClass().getDeclaredField("mDeviceBusy");
+            busy.setAccessible(true);
+            boolean isBusy = busy.getBoolean(mBluetoothGatt);
+            // mBluetoothGatt.executeReliableWrite();
+            Log.i("OKBLE", "write characteristic result: " + success + ", busy: " + isBusy);
+        } catch (Error e) {
+            e.printStackTrace();
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
     }

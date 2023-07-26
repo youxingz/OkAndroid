@@ -21,6 +21,8 @@ public class BCIX16Service extends AbstractService {
     public static final UUID SAMPLE_CHAR = UUID.fromString("0000fad3-0000-1000-8000-00805f9b34fb"); // 发生波形
     public static final UUID PULSE_WAVE_DESC = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"); // 订阅通知：波形回传变化 desc
     private X16DataPayloadParser payloadParser = new X16DataPayloadParser();
+    private volatile boolean working = false;
+    private volatile boolean sampling = false;
 
     public BCIX16Service(OkBleClient client) {
         super("Cardioflex BCI X16 Service", client);
@@ -28,29 +30,41 @@ public class BCIX16Service extends AbstractService {
 
     public Observable<BCIX16Service.X16DataPayload> startSample(String secret) {
         startLoopSyncTimestamp(secret);
-        return observeNotification(BCI_X16_SERVICE, SAMPLE_CHAR, PULSE_WAVE_DESC, new CharacteristicValueTaker<BCIX16Service.X16DataPayload>() {
-            @Override
-            public BCIX16Service.X16DataPayload takeValue(BluetoothGattCharacteristic characteristic) {
-                return payloadParser.parse(secret, characteristic.getValue());
-            }
-        });
+        return observeNotification(BCI_X16_SERVICE, SAMPLE_CHAR, PULSE_WAVE_DESC, characteristic -> payloadParser.parse(secret, characteristic.getValue()));
+    }
+
+    public void stopSample() {
+        sampling = false;
     }
 
     private Disposable syncDisposable;
 
     private void startLoopSyncTimestamp(String secret) {
-        // 使用 0x04 指令即可
-        if (syncDisposable != null) {
-            if (!syncDisposable.isDisposed()) {
-                syncDisposable.dispose();
-            }
-            syncDisposable = null;
+        sampling = true;
+        if (working) {
+            return;
         }
-        syncDisposable = OkAndroid.newThread().schedulePeriodicallyDirect(() -> {
-            byte[] payload = ("{\"cmd\":4, \"secret\": \"" + secret + "\",\"ts\":" + System.currentTimeMillis() + "}").getBytes(StandardCharsets.UTF_8);
-            System.out.println(":::::::::::::::::::" + new Date().toString());
-            client.simpleWrite(BCI_X16_SERVICE, CMD_CHAR, payload);
-        }, 1, 1, TimeUnit.SECONDS);
+        working = true;
+        // 使用 0x04 指令即可
+        // if (syncDisposable != null) {
+        //     if (!syncDisposable.isDisposed()) {
+        //         syncDisposable.dispose();
+        //     }
+        //     syncDisposable = null;
+        // }
+        syncDisposable = OkAndroid.newThread().scheduleDirect(() -> {
+            while (sampling) {
+                byte[] payload = ("{\"cmd\":4, \"secret\": \"" + secret + "\",\"ts\":" + System.currentTimeMillis() + "}").getBytes(StandardCharsets.UTF_8);
+                System.out.println(":::::::::::::::::::" + new Date().toString());
+                // client.simpleWrite(BCI_X16_SERVICE, CMD_CHAR, payload);
+                client.writeCharacteristic(BCI_X16_SERVICE, CMD_CHAR, payload, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT).subscribe();
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
     }
 
 
