@@ -165,7 +165,9 @@ public class XController {
                     String subtag = tag.substring(6);
                     PulseMotor.PulseMotorConfig payload = GsonUtils.getInstance().fromJson(body, PulseMotor.PulseMotorConfig.class);
                     PulseMotorWorker.updateConfig(subtag, payload);
-                    break;
+                    response.setStatus(400);
+                    return "ignored";
+                    // break;
                 }
                 case "gas_1": {
                     GasAir.GasAirPayload payload = GsonUtils.getInstance().fromJson(body, GasAir.GasAirPayload.class);

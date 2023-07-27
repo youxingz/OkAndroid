@@ -38,6 +38,7 @@ public class PageDashboard {
 
     public static void start() {
         Sys.start();
+        if (1 == 1) return;
         List<NodeId> nodeIds = new ArrayList<>();
         nodeIds.add(BioreactorNodeId.Equit_Air_PV);
         nodeIds.add(BioreactorNodeId.Equit_CO2_PV);

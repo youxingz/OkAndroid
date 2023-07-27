@@ -27,7 +27,8 @@ public class PulseMotorWorker {
         // ModbusMaster modbusMaster = ModbusMasterCreator.create(device);
         // modbusMaster.enableDebug(true);
         // stop all
-        stopAll();
+        // 2023-07-27: 关闭停止指令，该指令会在开机时触发 usb 写入从而卡住界面 5 秒
+        // stopAll();
         motors.clear();
         // motors.put("a1", new PulseMotor("a1", new Leadshine57PumpQueued(modbusMaster, 1)));
         // motors.put("a2", new PulseMotor("a2", new Leadshine57PumpQueued(modbusMaster, 2)));
