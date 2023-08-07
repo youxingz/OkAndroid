@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
+import android.bluetooth.BluetoothStatusCodes;
 import android.os.Build;
 import android.util.Log;
 
@@ -140,7 +141,7 @@ public abstract class OkBleGattCallback extends BluetoothGattCallback {
             BluetoothGattCharacteristic characteristic = request.getCharacteristic();
             currentWriteEmitter = emitter;
             int code = -1;
-            while (true) {
+            while (request.retryTime-- > 0) {
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
                     code = gatt.writeCharacteristic(characteristic, request.getData(), request.getWriteType());
                 } else {
@@ -158,11 +159,11 @@ public abstract class OkBleGattCallback extends BluetoothGattCallback {
                 }
                 System.out.println("RETRY...");
             }
-            // if (code != BluetoothStatusCodes.SUCCESS) {
-            //     if (!emitter.isDisposed()) {
-            //         emitter.onError(new OkBluetoothException.DeviceWriteException(String.format("Device write error. [%d]", code), code));
-            //     }
-            // }
+            if (code != BluetoothStatusCodes.SUCCESS) {
+                if (!emitter.isDisposed()) {
+                    emitter.onError(new OkBluetoothException.DeviceWriteException(String.format("Device write error. [%d]", code), code));
+                }
+            }
         }
     }
 
@@ -229,6 +230,7 @@ public abstract class OkBleGattCallback extends BluetoothGattCallback {
     }
 
     public static class OkBleCharacteristicWriteRequest {
+        public int retryTime = 3;
         private SingleEmitter<BluetoothGattCharacteristic> emitter;
         private BluetoothGattCharacteristic characteristic;
 

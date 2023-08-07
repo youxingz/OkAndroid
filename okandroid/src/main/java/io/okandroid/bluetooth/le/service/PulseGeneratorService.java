@@ -87,6 +87,7 @@ public class PulseGeneratorService extends AbstractService {
                 System.out.println(Arrays.toString(data));
                 if (data == null)
                     continue;
+                // client.simpleWrite(PULSE_GENERATOR_SERVICE, PULSE_PARAMS_CHAR, data);
                 Single<BluetoothGattCharacteristic> single = client.writeCharacteristic(characteristic, data, BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
                 //.onErrorResumeNext(new Function<Throwable, SingleSource<? extends BluetoothGattCharacteristic>>() {
                 //     @Override

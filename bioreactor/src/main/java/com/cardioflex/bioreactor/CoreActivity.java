@@ -1,7 +1,12 @@
 package com.cardioflex.bioreactor;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.pm.PackageManager;
+import android.net.ConnectivityManager;
+import android.net.EthernetNetworkSpecifier;
+import android.net.NetworkCapabilities;
+import android.net.NetworkRequest;
 import android.os.Bundle;
 import android.util.Log;
 import android.webkit.WebView;
@@ -39,6 +44,12 @@ public class CoreActivity extends AppCompatActivity {
         initUSB();
         startWorking();
 
+        // NetworkCapabilities.TRANSPORT_ETHERNET
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(connectivityManager.getActiveNetwork());
+        // capabilities.hasCapability(NetworkCapabilities.TRANSPORT_ETHERNET);
+        NetworkRequest request = new NetworkRequest.Builder().addTransportType(NetworkCapabilities.TRANSPORT_ETHERNET).build();
+        connectivityManager.requestNetwork(request, new ConnectivityManager.NetworkCallback());
         // test
         // USB usb = new USB(this);
         // try {
